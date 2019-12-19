@@ -1,7 +1,8 @@
-#include <stdio.h>
-#include <cstdlib>
+#include<stdio.h>
+#include<cstdlib>
 
-#include "Daemon.h"
+#include"Daemon.h"
+#include"UDSServer.h"
 
 int main()
 {
@@ -11,8 +12,8 @@ int main()
       return EXIT_SUCCESS;
    }
 
-   daemon.StartProcessing();
+   UDSServer server;
+   server.StartProcessing();
 
    return EXIT_SUCCESS;
 }
-

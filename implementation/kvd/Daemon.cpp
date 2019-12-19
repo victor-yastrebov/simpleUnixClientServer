@@ -1,6 +1,17 @@
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
+/**
+ *
+ * @author <va.yastrebov>
+ * @description
+ * <pre>
+ *    Class is responsible for demonisation of application
+  * </pre>
+ *
+ * @class Daemon
+ */
+
+#include<iostream>
+#include<stdio.h>
+#include<stdlib.h>
 #include<unistd.h>
 #include<signal.h>
 #include<sys/stat.h>
@@ -8,12 +19,18 @@
 
 #include"Daemon.h"
 
+/**
+ * CTOR
+ */
 Daemon::Daemon() :
    isDaemon( false )
 {
 
 }
 
+/**
+ * DTOR
+ */
 Daemon::~Daemon()
 {
    if( isDaemon )
@@ -23,6 +40,9 @@ Daemon::~Daemon()
    }
 }
 
+/**
+ * Run applicaton in daemon state
+ */
 bool Daemon::Daemonise()
 {
    pid_t pid;
@@ -90,15 +110,4 @@ bool Daemon::Daemonise()
 
    isDaemon = true;
    return true;
-}
-
-void Daemon::StartProcessing()
-{
-   while( true )
-   {
-      //TODO: Insert daemon code here.
-      syslog (LOG_NOTICE, "KVD service started");
-      sleep (20);
-      break;
-   }
 }
