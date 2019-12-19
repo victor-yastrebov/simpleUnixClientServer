@@ -1,11 +1,31 @@
 project(kvd)
 cmake_minimum_required(VERSION 2.8)
-aux_source_directory(. SRC_LIST)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread -std=gnu++0x")
-set(SRC_LIST ${CMAKE_CURRENT_LIST_DIR}/kvd/main.cpp)
+set(sources "")
+set(headers "")
+set(directories "")
 
-add_definitions(-DCMAKE_BUILD_TYPE=Debug)
-message(STATUS "aaa" ${SRC_LIST})
-add_executable(${PROJECT_NAME} ${SRC_LIST})
+
+#set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/")
+#set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/kdv/")
+
+message(STATUS "sources: " ${sources})
+message(STATUS "directories: " ${directories})
+
+#include_directories(
+#   ${directories}/
+#)
+
+set(headers ${headers}
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
+)
+
+set(sources ${sources}
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/main.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
+)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+add_executable(${PROJECT_NAME} ${headers} ${sources})
 

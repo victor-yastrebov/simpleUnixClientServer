@@ -1,0 +1,104 @@
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include<unistd.h>
+#include<signal.h>
+#include<sys/stat.h>
+#include<syslog.h>
+
+#include"Daemon.h"
+
+Daemon::Daemon() :
+   isDaemon( false )
+{
+
+}
+
+Daemon::~Daemon()
+{
+   if( isDaemon )
+   {
+      syslog (LOG_NOTICE, "KVD service terminated");
+      closelog();
+   }
+}
+
+bool Daemon::Daemonise()
+{
+   pid_t pid;
+
+   /* Fork off the parent process */
+   pid = fork();
+
+   /* An error occurred */
+   if( pid < 0 )
+   {
+      std::cout << "Error: failed to fork for the first time" << std::endl;
+      return false;
+   }
+
+   /* Success: Let the parent terminate */
+   if( pid > 0 )
+   {
+      return false;
+   }
+
+   /* On success: The child process becomes session leader */
+   if( setsid() < 0 )
+   {
+      std::cout << "Error: setsid failed" << std::endl;
+      return false;
+   }
+
+   /* Catch, ignore and handle signals */
+   //TODO: Implement a working signal handler */
+   signal( SIGCHLD, SIG_IGN );
+   signal( SIGHUP, SIG_IGN );
+
+   /* Fork off for the second time*/
+   pid = fork();
+
+   /* An error occurred */
+   if( pid < 0 )
+   {
+      std::cout << "Error: failed to fork for the second time" << std::endl;
+      return false;
+   }
+
+   /* Success: Let the parent terminate */
+   if( pid > 0 )
+   {
+      return false;
+   }
+
+   /* Set new file permissions */
+   umask( 0 );
+
+   /* Change the working directory to the root directory */
+   /* or another appropriated directory */
+   chdir( "/" );
+
+   /* Close all open file descriptors */
+   int x;
+   for( x = sysconf( _SC_OPEN_MAX ); x >= 0; x-- )
+   {
+      close( x );
+   }
+
+   /* Open the log file */
+   openlog( "kvdservice", LOG_PID, LOG_DAEMON );
+
+   isDaemon = true;
+   return true;
+}
+
+void Daemon::StartProcessing()
+{
+   while( true )
+   {
+      //TODO: Insert daemon code here.
+      syslog (LOG_NOTICE, "KVD service started");
+      sleep (20);
+      break;
+   }
+}
