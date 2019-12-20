@@ -21,15 +21,17 @@ include_directories(
 )
 
 set(kvd_headers ${kvd_headers}
+   "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.h"
-   "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
 )
 
 set(kvd_sources ${kvd_sources}
    "${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
 )
 
 set(kvctl_headers ${kvctl_headers}

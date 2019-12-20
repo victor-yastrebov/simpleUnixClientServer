@@ -21,6 +21,7 @@
 
 #include"UDS.h"
 #include"UDSServer.h"
+#include"DataBase.h"
 
 /**
  * CTOR
@@ -77,6 +78,10 @@ int UDSServer::StartProcessing()
    clients.clear();
 
    bool b_should_terminate = false;
+
+   DataBase db;
+   db.Initialize( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
+
    while( 1 )
    {
       // Заполняем множество сокетов из которых нам требуется читать данные
@@ -138,7 +143,9 @@ int UDSServer::StartProcessing()
             }
 
              const std::string s_query( buf, bytes_read );
-             std::string s_ans = ProcessQuery( s_query );
+
+             std::string s_ans( "OK" ); //ProcessQuery( s_query );
+             db.ExecuteQuery( s_query );
 
              // Отправляем данные обратно клиенту
              // std::stringstream ss;
