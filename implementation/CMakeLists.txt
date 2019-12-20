@@ -37,11 +37,15 @@ set(kvd_sources ${kvd_sources}
 set(kvctl_headers ${kvctl_headers}
    "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
 )
 
 set(kvctl_sources ${kvctl_sources}
    "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
 )
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")

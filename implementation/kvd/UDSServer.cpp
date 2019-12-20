@@ -18,6 +18,8 @@
 
 #include<algorithm>
 #include<set>
+#include<iostream>
+#include<sstream>
 
 #include"UDS.h"
 #include"UDSServer.h"
@@ -82,6 +84,12 @@ int UDSServer::StartProcessing()
    DataBase db;
    db.Initialize( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
 
+/*
+   bool a = true;
+   while(a){
+      int aa = 0;
+   }
+*/
    while( 1 )
    {
       // Заполняем множество сокетов из которых нам требуется читать данные
@@ -143,16 +151,20 @@ int UDSServer::StartProcessing()
             }
 
              const std::string s_query( buf, bytes_read );
+             std::stringstream ss;
+             ss << "Receive query: " << s_query << std::endl;
+             syslog( LOG_NOTICE, ss.str().c_str() );
 
              std::string s_ans( "OK" ); //ProcessQuery( s_query );
              db.ExecuteQuery( s_query );
 
+             syslog( LOG_NOTICE, "After execute" );
+
              // Отправляем данные обратно клиенту
-             // std::stringstream ss;
              // syslog( LOG_NOTICE, "Sending back: " << s_ans << std::endl;
              send( *it, s_ans.c_str(), s_ans.size(), 0 );
 
-             if( s_ans == "STOP" )
+             if( s_query == ".exit" )
              {
                 b_should_terminate = true;
                 break;
@@ -170,6 +182,9 @@ int UDSServer::StartProcessing()
      }
 
    } // end of while( 1 )
+
+   syslog( LOG_NOTICE, "LOOP is DONE" );
+
 
    return 1;
 }

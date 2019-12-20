@@ -13,6 +13,10 @@
 // https://cstack.github.io/db_tutorial
 
 #include<string>
+#include<iostream>
+#include<sstream>
+#include<syslog.h>
+
 
 typedef struct {
   char* buffer;
@@ -149,6 +153,40 @@ const uint32_t LEAF_NODE_RIGHT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) / 2;
 const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT =
     (LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT;
 
+class SysLogLogger
+{
+public:
+   SysLogLogger() = default;
+  ~SysLogLogger() {
+     // closelog();
+   }
+
+   template <typename...Ts>
+   void LogToSyslog(Ts&&... rest) {
+      LogToSyslogImpl("[ksvdservice db] ", std::forward<Ts>(rest)...);
+      std::string s_msg = ss.str();
+      std::cout << s_msg << std::endl;
+      syslog(LOG_NOTICE, s_msg.c_str());
+      ss.str("");
+   }
+
+private:
+   std::stringstream ss;
+
+   template <typename T>
+   void LogToSyslogImpl(T t) {
+      ss << t;
+   }
+
+   // void LogToSyslog() {}
+
+   template <typename T, typename...Ts>
+   void LogToSyslogImpl(T &&first, Ts&&... rest) {
+       ss << first << " ";
+       LogToSyslogImpl(std::forward<Ts>(rest)...);
+   }
+};
+
 class DataBase
 {
 public:
@@ -216,4 +254,6 @@ private:
    InputBuffer* input_buffer;
    Table* table;
    std::string sCurQuery;
+
+   SysLogLogger sysLogger;
 };

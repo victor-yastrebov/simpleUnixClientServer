@@ -25,7 +25,7 @@
  */
 DataBase::DataBase()
 {
-
+   // sysLogger.LogToSyslog( "DataBase CTOR DONE (1)" );
 }
 
 /**
@@ -33,11 +33,12 @@ DataBase::DataBase()
  */
 DataBase::~DataBase()
 {
-
+   // sysLogger.LogToSyslog( "DataBase DTOR DONE12" );
 }
 
-void DataBase::print_row(Row* row) {
-  printf("(%d, %s, %s)\n", row->id, row->username, row->email);
+void DataBase::print_row(Row* row)
+{
+  sysLogger.LogToSyslog("(", row->id, row->username, row->email, ")");
 }
 
 
@@ -78,7 +79,7 @@ uint32_t* DataBase::internal_node_cell(void* node, uint32_t cell_num) {
 uint32_t* DataBase::internal_node_child(void* node, uint32_t child_num) {
   uint32_t num_keys = *internal_node_num_keys(node);
   if (child_num > num_keys) {
-    printf("Tried to access child_num %d > num_keys %d\n", child_num, num_keys);
+    sysLogger.LogToSyslog( "Tried to access child_num %d > num_keys %d\n", child_num, num_keys );
     exit(EXIT_FAILURE);
   } else if (child_num == num_keys) {
     return internal_node_right_child(node);
@@ -121,17 +122,17 @@ uint32_t DataBase::get_node_max_key(void* node) {
 }
 
 void DataBase::print_constants() {
-  printf("ROW_SIZE: %d\n", ROW_SIZE);
-  printf("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
-  printf("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
-  printf("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
-  printf("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
-  printf("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
+  sysLogger.LogToSyslog("ROW_SIZE: %d\n", ROW_SIZE);
+  sysLogger.LogToSyslog("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
+  sysLogger.LogToSyslog("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
+  sysLogger.LogToSyslog("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
+  sysLogger.LogToSyslog("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
+  sysLogger.LogToSyslog("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
 }
 
 void* DataBase::get_page(Pager* pager, uint32_t page_num) {
   if (page_num > TABLE_MAX_PAGES) {
-    printf("Tried to fetch page number out of bounds. %d > %d\n", page_num,
+    sysLogger.LogToSyslog("Tried to fetch page number out of bounds. %d > %d\n", page_num,
            TABLE_MAX_PAGES);
     exit(EXIT_FAILURE);
   }
@@ -150,7 +151,7 @@ void* DataBase::get_page(Pager* pager, uint32_t page_num) {
       lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
       ssize_t bytes_read = read(pager->file_descriptor, page, PAGE_SIZE);
       if (bytes_read == -1) {
-        printf("Error reading file: %d\n", errno);
+        sysLogger.LogToSyslog("Error reading file: ", errno);
         exit(EXIT_FAILURE);
       }
     }
@@ -167,7 +168,7 @@ void* DataBase::get_page(Pager* pager, uint32_t page_num) {
 
 void DataBase::indent(uint32_t level) {
   for (uint32_t i = 0; i < level; i++) {
-    printf("  ");
+    sysLogger.LogToSyslog("  ");
   }
 }
 
@@ -179,22 +180,22 @@ void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_
     case (NODE_LEAF):
       num_keys = *leaf_node_num_cells(node);
       indent(indentation_level);
-      printf("- leaf (size %d)\n", num_keys);
+      sysLogger.LogToSyslog("- leaf (size %d)\n", num_keys);
       for (uint32_t i = 0; i < num_keys; i++) {
         indent(indentation_level + 1);
-        printf("- %d\n", *leaf_node_key(node, i));
+        sysLogger.LogToSyslog("- %d\n", *leaf_node_key(node, i));
       }
       break;
     case (NODE_INTERNAL):
       num_keys = *internal_node_num_keys(node);
       indent(indentation_level);
-      printf("- internal (size %d)\n", num_keys);
+      sysLogger.LogToSyslog("- internal (size %d)\n", num_keys);
       for (uint32_t i = 0; i < num_keys; i++) {
         child = *internal_node_child(node, i);
         print_tree(pager, child, indentation_level + 1);
 
         indent(indentation_level + 1);
-        printf("- key %d\n", *internal_node_key(node, i));
+        sysLogger.LogToSyslog("- key %d\n", *internal_node_key(node, i));
       }
       child = *internal_node_right_child(node);
       print_tree(pager, child, indentation_level + 1);
@@ -355,7 +356,7 @@ Pager* DataBase::pager_open(const char* filename) {
                 );
 
   if (fd == -1) {
-    printf("Unable to open file\n");
+    sysLogger.LogToSyslog("Unable to open file\n");
     exit(EXIT_FAILURE);
   }
 
@@ -367,7 +368,7 @@ Pager* DataBase::pager_open(const char* filename) {
   pager->num_pages = (file_length / PAGE_SIZE);
 
   if (file_length % PAGE_SIZE != 0) {
-    printf("Db file is not a whole number of pages. Corrupt file.\n");
+    sysLogger.LogToSyslog("Db file is not a whole number of pages. Corrupt file.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -404,7 +405,7 @@ InputBuffer* DataBase::new_input_buffer() {
   return input_buffer;
 }
 
-void DataBase::print_prompt() { printf("db > "); }
+void DataBase::print_prompt() { sysLogger.LogToSyslog("db > "); }
 
 void DataBase::read_input(InputBuffer* input_buffer, const std::string &s_query ) {
   sCurQuery = s_query;
@@ -419,7 +420,7 @@ void DataBase::read_input(InputBuffer* input_buffer, const std::string &s_query 
   // getline(&(input_buffer->buffer), &(input_buffer->buffer_length), stdin);
 
   if (bytes_read <= 0) {
-    printf("Error reading input\n");
+    sysLogger.LogToSyslog("Error reading input\n");
     exit(EXIT_FAILURE);
   }
 
@@ -429,20 +430,20 @@ void DataBase::read_input(InputBuffer* input_buffer, const std::string &s_query 
 }
 
 void DataBase::close_input_buffer(InputBuffer* input_buffer) {
-  free(input_buffer->buffer);
+  // free(input_buffer->buffer);
   free(input_buffer);
 }
 
 void DataBase::pager_flush(Pager* pager, uint32_t page_num) {
   if (pager->pages[page_num] == NULL) {
-    printf("Tried to flush null page\n");
+    sysLogger.LogToSyslog("Tried to flush null page\n");
     exit(EXIT_FAILURE);
   }
 
   off_t offset = lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
 
   if (offset == -1) {
-    printf("Error seeking: %d\n", errno);
+    sysLogger.LogToSyslog("Error seeking: %d\n", errno);
     exit(EXIT_FAILURE);
   }
 
@@ -450,7 +451,7 @@ void DataBase::pager_flush(Pager* pager, uint32_t page_num) {
       write(pager->file_descriptor, pager->pages[page_num], PAGE_SIZE);
 
   if (bytes_written == -1) {
-    printf("Error writing: %d\n", errno);
+    sysLogger.LogToSyslog("Error writing: %d\n", errno);
     exit(EXIT_FAILURE);
   }
 }
@@ -471,8 +472,11 @@ void DataBase::db_close(Table* table) {
   // closes the database file
   int result = close(pager->file_descriptor);
   if (result == -1) {
-    printf("Error closing db file.\n");
+    sysLogger.LogToSyslog("Error closing db file.\n");
     exit(EXIT_FAILURE);
+  }
+  else {
+     // LogToSyslog( "close DB success" );
   }
 
   // frees the memory for the Pager and Table data structures
@@ -491,13 +495,13 @@ MetaCommandResult DataBase::do_meta_command(InputBuffer* input_buffer, Table* ta
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
     close_input_buffer(input_buffer);
     db_close(table);
-    exit(EXIT_SUCCESS);
+    return META_COMMAND_SUCCESS;
   } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
-    printf("Tree:\n");
+    sysLogger.LogToSyslog("Tree:\n");
     print_tree(table->pager, 0, 0);
     return META_COMMAND_SUCCESS;
   } else if (strcmp(input_buffer->buffer, ".constants") == 0) {
-    printf("Constants:\n");
+    sysLogger.LogToSyslog("Constants:\n");
     print_constants();
     return META_COMMAND_SUCCESS;
   } else {
@@ -599,7 +603,7 @@ void DataBase::internal_node_insert(Table* table, uint32_t parent_page_num,
   *internal_node_num_keys(parent) = original_num_keys + 1;
 
   if (original_num_keys >= INTERNAL_NODE_MAX_CELLS) {
-    printf("Need to implement splitting internal node\n");
+    sysLogger.LogToSyslog("Need to implement splitting internal node\n");
     exit(EXIT_FAILURE);
   }
 
@@ -759,6 +763,9 @@ ExecuteResult DataBase::execute_statement(Statement* statement, Table* table) {
 
 void DataBase::Initialize( char *filename )
 {
+   // [TODO] remove in future
+   unlink( filename );
+
    table = db_open( filename );
    input_buffer = new_input_buffer();
 }
@@ -773,7 +780,7 @@ int DataBase::ExecuteQuery( const std::string &s_query )
           return 1;
           //continue;
        case (META_COMMAND_UNRECOGNIZED_COMMAND):
-         printf("Unrecognized command '%s'\n", input_buffer->buffer);
+         sysLogger.LogToSyslog("Unrecognized command '%s'\n", input_buffer->buffer);
          return 1;
          // continue;
      }
@@ -784,31 +791,30 @@ int DataBase::ExecuteQuery( const std::string &s_query )
      case (PREPARE_SUCCESS):
        break;
      case (PREPARE_NEGATIVE_ID):
-       printf("ID must be positive.\n");
+       sysLogger.LogToSyslog("ID must be positive");
        return 1;
        // continue;
      case (PREPARE_STRING_TOO_LONG):
-       printf("String is too long.\n");
+       sysLogger.LogToSyslog("String is too long");
        return 1;
        // continue;
      case (PREPARE_SYNTAX_ERROR):
-       printf("Syntax error. Could not parse statement.\n");
+       sysLogger.LogToSyslog("Syntax error. Could not parse statement");
        return 1;
        // continue;
      case (PREPARE_UNRECOGNIZED_STATEMENT):
-       printf("Unrecognized keyword at start of '%s'.\n",
-              input_buffer->buffer);
+       sysLogger.LogToSyslog("Unrecognized keyword at start of ", input_buffer->buffer);
        return 1;
        // continue;
    }
 
    switch (execute_statement(&statement, table)) {
      case (EXECUTE_SUCCESS):
-       printf("Executed.\n");
+       sysLogger.LogToSyslog("Executed.\n");
        return 1;
        // break;
      case (EXECUTE_DUPLICATE_KEY):
-       printf("Error: Duplicate key.\n");
+       sysLogger.LogToSyslog("Error: Duplicate key.\n");
        return 1;
        // break;
    }
@@ -819,7 +825,7 @@ int DataBase::ExecuteQuery( const std::string &s_query )
 /*
 int main(int argc, char* argv[]) {
   if (argc < 2) {
-    printf("Must supply a database filename.\n");
+    sysLogger.LogToSyslog("Must supply a database filename.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -836,7 +842,7 @@ int main(int argc, char* argv[]) {
         case (META_COMMAND_SUCCESS):
           continue;
         case (META_COMMAND_UNRECOGNIZED_COMMAND):
-          printf("Unrecognized command '%s'\n", input_buffer->buffer);
+          sysLogger.LogToSyslog("Unrecognized command '%s'\n", input_buffer->buffer);
           continue;
       }
     }
@@ -846,26 +852,26 @@ int main(int argc, char* argv[]) {
       case (PREPARE_SUCCESS):
         break;
       case (PREPARE_NEGATIVE_ID):
-        printf("ID must be positive.\n");
+        sysLogger.LogToSyslog("ID must be positive.\n");
         continue;
       case (PREPARE_STRING_TOO_LONG):
-        printf("String is too long.\n");
+        sysLogger.LogToSyslog("String is too long.\n");
         continue;
       case (PREPARE_SYNTAX_ERROR):
-        printf("Syntax error. Could not parse statement.\n");
+        sysLogger.LogToSyslog("Syntax error. Could not parse statement.\n");
         continue;
       case (PREPARE_UNRECOGNIZED_STATEMENT):
-        printf("Unrecognized keyword at start of '%s'.\n",
+        sysLogger.LogToSyslog("Unrecognized keyword at start of '%s'.\n",
                input_buffer->buffer);
         continue;
     }
 
     switch (execute_statement(&statement, table)) {
       case (EXECUTE_SUCCESS):
-        printf("Executed.\n");
+        sysLogger.LogToSyslog("Executed.\n");
         break;
       case (EXECUTE_DUPLICATE_KEY):
-        printf("Error: Duplicate key.\n");
+        sysLogger.LogToSyslog("Error: Duplicate key.\n");
         break;
     }
   }

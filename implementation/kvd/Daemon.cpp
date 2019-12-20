@@ -35,8 +35,8 @@ Daemon::~Daemon()
 {
    if( isDaemon )
    {
-      syslog (LOG_NOTICE, "KVD service terminated");
-      closelog();
+      // syslog (LOG_NOTICE, "KVD service terminated");
+      // closelog();
    }
 }
 

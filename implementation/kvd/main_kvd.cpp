@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include<cstdlib>
+#include<syslog.h>
 
 #include"Daemon.h"
 #include"UDSServer.h"
@@ -14,6 +15,8 @@ int main()
 
    UDSServer server;
    server.StartProcessing();
+
+   syslog( LOG_NOTICE, "Before end of main" );
 
    return EXIT_SUCCESS;
 }
