@@ -180,22 +180,22 @@ void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_
     case (NODE_LEAF):
       num_keys = *leaf_node_num_cells(node);
       indent(indentation_level);
-      sysLogger.LogToSyslog("- leaf (size %d)\n", num_keys);
+      sysLogger.LogToSyslog("- leaf (size", num_keys, ")");
       for (uint32_t i = 0; i < num_keys; i++) {
         indent(indentation_level + 1);
-        sysLogger.LogToSyslog("- %d\n", *leaf_node_key(node, i));
+        sysLogger.LogToSyslog("- ", *leaf_node_key(node, i));
       }
       break;
     case (NODE_INTERNAL):
       num_keys = *internal_node_num_keys(node);
       indent(indentation_level);
-      sysLogger.LogToSyslog("- internal (size %d)\n", num_keys);
+      sysLogger.LogToSyslog("- internal (size ", num_keys, ")");
       for (uint32_t i = 0; i < num_keys; i++) {
         child = *internal_node_child(node, i);
         print_tree(pager, child, indentation_level + 1);
 
         indent(indentation_level + 1);
-        sysLogger.LogToSyslog("- key %d\n", *internal_node_key(node, i));
+        sysLogger.LogToSyslog("- key ", *internal_node_key(node, i));
       }
       child = *internal_node_right_child(node);
       print_tree(pager, child, indentation_level + 1);
