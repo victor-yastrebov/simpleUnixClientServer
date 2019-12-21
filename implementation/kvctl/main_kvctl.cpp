@@ -13,20 +13,12 @@ int main()
 
       sl.LogToSyslog( "---New instance start---" );
 
-      DataBase db;
-      db.Initialize( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
-
-      db.ExecuteQuery( "insert keystring valuestring" );
-
-      return 1;
-
-      // db.ExecuteQuery( "insert" );
-      db.ExecuteQuery( "insert 2 ilonmask ilonmask@tesla.ru" );
-      db.ExecuteQuery( "insert 3 vayastrebov yastrebov@corp123.ru" );
-      db.ExecuteQuery( "select" );
-      db.ExecuteQuery( ".btree" );
-      db.ExecuteQuery( ".exit" );
-    }
+      DataBase db( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
+      db.ExecuteQuery( "put keystring1 valuestring2" );
+      db.ExecuteQuery( "put keystring2 valuestring2" );
+      db.ExecuteQuery( "put keystring3 valuestring3" );
+      db.ExecuteQuery( "list" );
+   }
 
    sl.LogToSyslog( "Finished success" );
    return 0;

@@ -42,7 +42,7 @@ typedef enum {
   PREPARE_UNRECOGNIZED_STATEMENT
 } PrepareResult;
 
-typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
+typedef enum { STATEMENT_PUT, STATEMENT_LIST } StatementType;
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
@@ -75,7 +75,7 @@ const uint32_t VALUE_STR_SIZE = size_of_attribute(Row, value);
 
 
 const uint32_t ID_OFFSET = 0;
-const uint32_t VALUE_OFFSET = 0;
+const uint32_t VALUE_STR_OFFSET = 0;
 
 const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
 const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
@@ -175,17 +175,19 @@ class SysLogLogger
 {
 public:
    SysLogLogger() = default;
-  ~SysLogLogger() {
+  ~SysLogLogger()
+   {
      // closelog();
    }
 
-   template <typename...Ts>
-   void LogToSyslog(Ts&&... rest) {
-      LogToSyslogImpl("[ksvdservice db] ", std::forward<Ts>(rest)...);
+   template<typename...Ts>
+   void LogToSyslog( Ts&&... rest )
+   {
+      LogToSyslogImpl( "[ksvdservice db] ", std::forward<Ts>( rest )... );
       std::string s_msg = ss.str();
       std::cout << s_msg << std::endl;
-      syslog(LOG_NOTICE, s_msg.c_str());
-      ss.str("");
+      syslog( LOG_NOTICE, s_msg.c_str() );
+      ss.str( "" );
    }
 
 private:
@@ -208,11 +210,10 @@ private:
 class DataBase
 {
 public:
-          DataBase();
+          DataBase( const std::string &sDbFilePath );
          ~DataBase();
           DataBase( const DataBase& ) = delete;
           DataBase& operator=( const DataBase& ) = delete;
-   void   Initialize( char *filename );
     int   ExecuteQuery( const std::string &s );
 
 private:
@@ -238,7 +239,7 @@ private:
    void   indent(uint32_t level);
    void   print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_level);
    void   serialize_row(Row* source, void* destination);
-   void   deserialize_row(void* source, Row* destination);
+   void   deserialize_row( void *key, void* source, Row* destination );
    void   initialize_leaf_node(void* node);
    void   initialize_internal_node(void* node);
    Cursor*  leaf_node_find(Table* table, uint32_t page_num, char* key);
@@ -249,13 +250,13 @@ private:
    void*  cursor_value(Cursor* cursor);
    void   cursor_advance(Cursor* cursor);
    Pager*  pager_open(const char* filename);
-   Table*  db_open(const char* filename);
+   void  db_open();
    InputBuffer*  new_input_buffer();
    void   print_prompt();
    void   read_input(InputBuffer* input_buffer, const std::string &s_query);
    void   close_input_buffer(InputBuffer* input_buffer);
    void   pager_flush(Pager* pager, uint32_t page_num);
-   void   db_close(Table* table);
+   void   db_close();
    MetaCommandResult   do_meta_command(InputBuffer* input_buffer, Table* table);
    PrepareResult   prepare_insert(InputBuffer* input_buffer, Statement* statement);
    PrepareResult   prepare_statement(InputBuffer* input_buffer, Statement* statement);
@@ -266,16 +267,19 @@ private:
    void   leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
    void   leaf_node_insert(Cursor* cursor, char* key, Row* value);
    ExecuteResult   execute_insert(Statement* statement, Table* table);
-   ExecuteResult   execute_select(Statement* statement, Table* table);
+   ExecuteResult   execute_list(Statement* statement, Table* table);
    ExecuteResult   execute_statement(Statement* statement, Table* table);
    int   compareKeys( char *key1, char* key2 ) const;
    char* leafNodeKey(void* node, uint32_t cell_num);
    void* leafNodeCell(void* node, uint32_t cell_num);
    void*  leafNodeValue(void* node, uint32_t cell_num);
+   Cursor*   createCursorForFirstCell( Table* table ) const;
+   void* cursor_key(Cursor* cursor);
 
    InputBuffer* input_buffer;
    Table* table;
    std::string sCurQuery;
+   const std::string sDbFilePath;
 
    SysLogLogger sysLogger;
 };

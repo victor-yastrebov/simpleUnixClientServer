@@ -23,7 +23,8 @@
 /**
  * CTOR
  */
-DataBase::DataBase()
+DataBase::DataBase( const std::string &s_db_file_path ) :
+   sDbFilePath( s_db_file_path )
 {
    // sysLogger.LogToSyslog( "DataBase CTOR DONE (1)" );
 }
@@ -38,7 +39,7 @@ DataBase::~DataBase()
 
 void DataBase::print_row(Row* row)
 {
-  sysLogger.LogToSyslog("(", row->id, row->username, row->email, ")");
+   sysLogger.LogToSyslog( "(", row->key, ", ", row->value, ")" );
 }
 
 
@@ -93,6 +94,7 @@ uint32_t* DataBase::internal_node_key(void* node, uint32_t key_num) {
 }
 
 uint32_t* DataBase::leaf_node_num_cells(void* node) {
+  uint32_t* val = static_cast<uint32_t*>( node ) + LEAF_NODE_NUM_CELLS_OFFSET;
   return static_cast<uint32_t*>( node ) + LEAF_NODE_NUM_CELLS_OFFSET;
 }
 
@@ -231,15 +233,17 @@ void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_
 }
 
 void DataBase::serialize_row(Row* source, void* destination) {
-  memcpy(destination + VALUE_OFFSET, &(source->value), VALUE_STR_SIZE);
+  memcpy(destination + VALUE_STR_OFFSET, &(source->value), VALUE_STR_SIZE);
   // memcpy(destination + USERNAME_OFFSET, &(source->username), USERNAME_SIZE);
   // memcpy(destination + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
-void DataBase::deserialize_row(void* source, Row* destination) {
-  memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
-  memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE);
-  memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
+void DataBase::deserialize_row( void *key, void* source, Row* destination ) {
+  memcpy(&(destination->value), source + VALUE_STR_OFFSET, VALUE_STR_SIZE);
+  memcpy(&(destination->key), key, KEY_STR_SIZE);
+  // memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
+  // memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE);
+  // memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
 }
 
 void DataBase::initialize_leaf_node(void* node) {
@@ -364,7 +368,7 @@ Cursor* DataBase::table_find(Table* table, char* key) {
 
   if (get_node_type(root_node) == NODE_LEAF)
   {
-     // найди в таблице, начиная с ее первой стрницы такой вот ключ
+     // найди в таблице, начиная с ее первой страницы такой вот ключ
      return leaf_node_find(table, root_page_num, key);
   } else {
     sysLogger.LogToSyslog( "!!!!!!! INTERNAL NODE FIND IS NOT IMPLEMENTED !!!");
@@ -373,21 +377,40 @@ Cursor* DataBase::table_find(Table* table, char* key) {
   }
 }
 
+Cursor* DataBase::createCursorForFirstCell( Table* table ) const
+{
+   Cursor* cursor = (Cursor*)malloc(sizeof(Cursor));
+   cursor->table = table;
+   cursor->page_num = table->root_page_num;
+   cursor->end_of_table = false;
+
+   cursor->cell_num = 0;
+   return cursor;
+}
+
 Cursor* DataBase::table_start(Table* table) {
-  Cursor* cursor = table_find(table, 0);
+   // надо установить курсор на самую первую строку
+   Cursor* cursor = createCursorForFirstCell( table );
 
-  void* node = get_page(table->pager, cursor->page_num);
-  uint32_t num_cells = *leaf_node_num_cells(node);
-  cursor->end_of_table = (num_cells == 0);
+   void* node = get_page( table->pager, cursor->page_num );
+   uint32_t num_cells = *leaf_node_num_cells( node );
+   cursor->end_of_table = ( num_cells == 0 );
 
-  return cursor;
+   return cursor;
 }
 
 void* DataBase::cursor_value(Cursor* cursor) {
   uint32_t page_num = cursor->page_num;
   void* page = get_page(cursor->table->pager, page_num);
-  return leaf_node_value(page, cursor->cell_num);
+  return leafNodeValue(page, cursor->cell_num);
 }
+
+void* DataBase::cursor_key(Cursor* cursor) {
+   uint32_t page_num = cursor->page_num;
+   void* page = get_page(cursor->table->pager, page_num);
+   return leafNodeKey(page, cursor->cell_num);
+}
+
 
 void DataBase::cursor_advance(Cursor* cursor) {
   uint32_t page_num = cursor->page_num;
@@ -442,11 +465,11 @@ Pager* DataBase::pager_open(const char* filename) {
   return pager;
 }
 
-Table* DataBase::db_open( const char* filename )
+void DataBase::db_open()
 {
-  Pager* pager = pager_open( filename );
+  Pager* pager = pager_open( sDbFilePath.c_str() );
 
-  Table* table = (Table *)malloc(sizeof(Table));
+  table = (Table *)malloc(sizeof(Table));
   table->pager = pager;
   table->root_page_num = 0;
 
@@ -457,8 +480,6 @@ Table* DataBase::db_open( const char* filename )
     initialize_leaf_node(root_node);
     set_node_root(root_node, true);
   }
-
-  return table;
 }
 
 InputBuffer* DataBase::new_input_buffer() {
@@ -524,7 +545,7 @@ void DataBase::pager_flush(Pager* pager, uint32_t page_num) {
   }
 }
 
-void DataBase::db_close(Table* table) {
+void DataBase::db_close() {
   Pager* pager = table->pager;
 
   // flushes the page cache to disk
@@ -562,7 +583,7 @@ void DataBase::db_close(Table* table) {
 MetaCommandResult DataBase::do_meta_command(InputBuffer* input_buffer, Table* table) {
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
     close_input_buffer(input_buffer);
-    db_close(table);
+    db_close();
     return META_COMMAND_SUCCESS;
   } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
     sysLogger.LogToSyslog("Tree:\n");
@@ -578,7 +599,7 @@ MetaCommandResult DataBase::do_meta_command(InputBuffer* input_buffer, Table* ta
 }
 
 PrepareResult DataBase::prepare_insert(InputBuffer* input_buffer, Statement* statement) {
-  statement->type = STATEMENT_INSERT;
+  statement->type = STATEMENT_PUT;
 
   char* keyword = strtok(input_buffer->buffer, " ");
 
@@ -607,11 +628,11 @@ PrepareResult DataBase::prepare_insert(InputBuffer* input_buffer, Statement* sta
 
 PrepareResult DataBase::prepare_statement(InputBuffer* input_buffer,
                                 Statement* statement) {
-  if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
+  if (strncmp(input_buffer->buffer, "put", 3) == 0) {
     return prepare_insert(input_buffer, statement);
   }
-  if (strcmp(input_buffer->buffer, "select") == 0) {
-    statement->type = STATEMENT_SELECT;
+  if (strcmp(input_buffer->buffer, "list") == 0) {
+    statement->type = STATEMENT_LIST;
     return PREPARE_SUCCESS;
   }
 
@@ -807,19 +828,20 @@ ExecuteResult DataBase::execute_insert(Statement* statement, Table* table) {
     }
   }
 
-  leaf_node_insert( cursor, row_to_insert->key, row_to_insert);
+  leaf_node_insert( cursor, row_to_insert->key, row_to_insert );
 
   free(cursor);
 
   return EXECUTE_SUCCESS;
 }
 
-ExecuteResult DataBase::execute_select(Statement* statement, Table* table) {
-  Cursor* cursor = table_start(table);
+ExecuteResult DataBase::execute_list(Statement* statement, Table* table) {
+  Cursor* cursor = table_start( table );
 
   Row row;
-  while (!(cursor->end_of_table)) {
-    deserialize_row(cursor_value(cursor), &row);
+  while( ! ( cursor->end_of_table ) )
+  {
+    deserialize_row( cursor_key(cursor), cursor_value(cursor), &row );
     print_row(&row);
     cursor_advance(cursor);
   }
@@ -833,28 +855,20 @@ ExecuteResult DataBase::execute_statement(Statement* statement, Table* table)
 {
    switch (statement->type)
    {
-      case (STATEMENT_INSERT) :
+      case (STATEMENT_PUT) :
       {
          return execute_insert(statement, table);
       }
-      case (STATEMENT_SELECT) :
+      case (STATEMENT_LIST) :
       {
-         return execute_select(statement, table);
+         return execute_list(statement, table);
       }
    }
 }
 
-void DataBase::Initialize( char *filename )
-{
-   // [TODO] remove in future
-   unlink( filename );
-
-   table = db_open( filename );
-   input_buffer = new_input_buffer();
-}
-
 int DataBase::ExecuteQuery( const std::string &s_query )
 {
+   input_buffer = new_input_buffer();
    read_input(input_buffer, s_query );
 
    if (input_buffer->buffer[0] == '.') {
@@ -887,17 +901,21 @@ int DataBase::ExecuteQuery( const std::string &s_query )
        // continue;
    }
 
+   int result = 0;
+   db_open();
+
    switch (execute_statement(&statement, table)) {
      case (EXECUTE_SUCCESS):
-       sysLogger.LogToSyslog("Executed.\n");
-       db_close( table );
-       return 1;
-       // break;
+       sysLogger.LogToSyslog("Executed");
+       result = 0;
+       break;
      case (EXECUTE_DUPLICATE_KEY):
-       sysLogger.LogToSyslog("Error: Duplicate key.\n");
-       return 1;
-       // break;
+       sysLogger.LogToSyslog("Error: Duplicate key");
+       result = 1;
+       break;
    }
+
+   db_close();
 
    return 0;
 }
