@@ -9,16 +9,20 @@ int main()
    {
       Daemon daemon;
 
-      if(!daemon.Daemonise()) return 1;
+      // if(!daemon.Daemonise()) return 1;
 
       sl.LogToSyslog( "---New instance start---" );
 
       DataBase db;
       db.Initialize( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
 
+      db.ExecuteQuery( "insert keystring valuestring" );
+
+      return 1;
+
       // db.ExecuteQuery( "insert" );
       db.ExecuteQuery( "insert 2 ilonmask ilonmask@tesla.ru" );
-      db.ExecuteQuery( "insert 3 vayastrebov yastrebov@corp.ru" );
+      db.ExecuteQuery( "insert 3 vayastrebov yastrebov@corp123.ru" );
       db.ExecuteQuery( "select" );
       db.ExecuteQuery( ".btree" );
       db.ExecuteQuery( ".exit" );

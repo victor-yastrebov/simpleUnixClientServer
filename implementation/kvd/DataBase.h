@@ -46,10 +46,17 @@ typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 255
+
+#define KEY_MAX_SIZE 255
+#define VALUE_MAX_SIZE 255
+
 typedef struct {
   uint32_t id;
   char username[COLUMN_USERNAME_SIZE + 1];
   char email[COLUMN_EMAIL_SIZE + 1];
+
+  char key[KEY_MAX_SIZE];
+  char value[VALUE_MAX_SIZE];
 } Row;
 
 typedef struct {
@@ -62,10 +69,18 @@ typedef struct {
 const uint32_t ID_SIZE = size_of_attribute(Row, id);
 const uint32_t USERNAME_SIZE = size_of_attribute(Row, username);
 const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
+
+const uint32_t KEY_STR_SIZE = size_of_attribute(Row, key);
+const uint32_t VALUE_STR_SIZE = size_of_attribute(Row, value);
+
+
 const uint32_t ID_OFFSET = 0;
+const uint32_t VALUE_OFFSET = 0;
+
 const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
 const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
-const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
+// const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
+const uint32_t ROW_SIZE = KEY_STR_SIZE + VALUE_STR_SIZE;
 
 const uint32_t PAGE_SIZE = 4096;
 #define TABLE_MAX_PAGES 100
@@ -141,11 +156,14 @@ const uint32_t LEAF_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE +
  * Leaf Node Body Layout
  */
 const uint32_t LEAF_NODE_KEY_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_STR_KEY_SIZE = KEY_STR_SIZE;
 const uint32_t LEAF_NODE_KEY_OFFSET = 0;
+
 const uint32_t LEAF_NODE_VALUE_SIZE = ROW_SIZE;
 const uint32_t LEAF_NODE_VALUE_OFFSET =
     LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
 const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
+
 const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
 const uint32_t LEAF_NODE_MAX_CELLS =
     LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
@@ -223,10 +241,10 @@ private:
    void   deserialize_row(void* source, Row* destination);
    void   initialize_leaf_node(void* node);
    void   initialize_internal_node(void* node);
-   Cursor*  leaf_node_find(Table* table, uint32_t page_num, uint32_t key);
+   Cursor*  leaf_node_find(Table* table, uint32_t page_num, char* key);
    uint32_t   internal_node_find_child(void* node, uint32_t key);
    Cursor*  internal_node_find(Table* table, uint32_t page_num, uint32_t key);
-   Cursor*  table_find(Table* table, uint32_t key);
+   Cursor*  table_find(Table* table, char* key);
    Cursor*  table_start(Table* table);
    void*  cursor_value(Cursor* cursor);
    void   cursor_advance(Cursor* cursor);
@@ -246,10 +264,14 @@ private:
    void   internal_node_insert(Table* table, uint32_t parent_page_num, uint32_t child_page_num);
    void   update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key);
    void   leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
-   void   leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
+   void   leaf_node_insert(Cursor* cursor, char* key, Row* value);
    ExecuteResult   execute_insert(Statement* statement, Table* table);
    ExecuteResult   execute_select(Statement* statement, Table* table);
    ExecuteResult   execute_statement(Statement* statement, Table* table);
+   int   compareKeys( char *key1, char* key2 ) const;
+   char* leafNodeKey(void* node, uint32_t cell_num);
+   void* leafNodeCell(void* node, uint32_t cell_num);
+   void*  leafNodeValue(void* node, uint32_t cell_num);
 
    InputBuffer* input_buffer;
    Table* table;
