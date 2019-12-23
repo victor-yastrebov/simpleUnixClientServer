@@ -23,7 +23,7 @@
 
 #include"UDS.h"
 #include"UDSServer.h"
-#include"DataBase.h"
+#include"QueryResult.h"
 
 /**
  * CTOR
@@ -46,7 +46,7 @@ UDSServer::~UDSServer()
  */
 int UDSServer::StartProcessing()
 {
-   syslog( LOG_NOTICE, "KVD service started" );
+   sysLogger.LogToSyslog( "KVD service started" );
 
    int listener;
    struct sockaddr_un addr;
@@ -56,7 +56,7 @@ int UDSServer::StartProcessing()
    listener = socket(PF_UNIX, SOCK_STREAM, 0);
    if( listener < 0 )
    {
-      syslog( LOG_NOTICE, "Create listener failed" );
+      sysLogger.LogToSyslog( "Create listener failed" );
       return 1;
    }
 
@@ -69,7 +69,7 @@ int UDSServer::StartProcessing()
    unlink( SERVER_SOCK_FILE );
    if( bind( listener, ( struct sockaddr *)&addr, sizeof( addr ) ) < 0 )
    {
-      syslog( LOG_NOTICE, "Bind listener socket failed" );
+      sysLogger.LogToSyslog( "Bind listener socket failed" );
       return 2;
    }
 
@@ -81,8 +81,7 @@ int UDSServer::StartProcessing()
 
    bool b_should_terminate = false;
 
-   DataBase db;
-   db.Initialize( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
+   DataBase db( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
 
 /*
    bool a = true;
@@ -113,7 +112,7 @@ int UDSServer::StartProcessing()
       // n (первый парметр) должен быть на единицу больше самого большого номера описателей из всех наборов.
       if( select( mx+1, &readset, NULL, NULL, &timeout ) <= 0 )
       {
-         syslog( LOG_NOTICE, "select timeout. No active sockets found" );
+         sysLogger.LogToSyslog( "select timeout. No active sockets found" );
          continue;
       }
 
@@ -124,7 +123,7 @@ int UDSServer::StartProcessing()
          int sock = accept( listener, NULL, NULL );
          if( sock < 0 )
          {
-            syslog( LOG_NOTICE, "Accept failed" );
+            sysLogger.LogToSyslog( "Accept failed" );
             return 3;
          }
 
@@ -143,7 +142,7 @@ int UDSServer::StartProcessing()
 
             if( bytes_read <= 0 )
             {
-               syslog( LOG_NOTICE, "Connection is terminated" );
+               sysLogger.LogToSyslog( "Connection is terminated" );
                // Соединение разорвано, удаляем сокет из множества
                close( *it );
                clients.erase( *it );
@@ -153,16 +152,19 @@ int UDSServer::StartProcessing()
              const std::string s_query( buf, bytes_read );
              std::stringstream ss;
              ss << "Receive query: " << s_query << std::endl;
-             syslog( LOG_NOTICE, ss.str().c_str() );
+             sysLogger.LogToSyslog( ss.str().c_str() );
 
-             std::string s_ans( "OK" ); //ProcessQuery( s_query );
-             db.ExecuteQuery( s_query );
 
-             syslog( LOG_NOTICE, "After execute" );
+             QueryResult qr = db.ExecuteQuery( s_query );
+
+             sysLogger.LogToSyslog( "Query result is: ", qr.sData );
+
+
+             sysLogger.LogToSyslog( "After execute" );
 
              // Отправляем данные обратно клиенту
-             // syslog( LOG_NOTICE, "Sending back: " << s_ans << std::endl;
-             send( *it, s_ans.c_str(), s_ans.size(), 0 );
+             // sysLogger.LogToSyslog( "Sending back: " << s_ans << std::endl;
+             send( *it, qr.sData.c_str(), qr.sData.size(), 0 );
 
              if( s_query == ".exit" )
              {
@@ -183,7 +185,7 @@ int UDSServer::StartProcessing()
 
    } // end of while( 1 )
 
-   syslog( LOG_NOTICE, "LOOP is DONE" );
+   sysLogger.LogToSyslog( "LOOP is DONE" );
 
 
    return 1;

@@ -9,6 +9,8 @@
  * @class QueryResult
  */
 
+#pragma once
+
 #include<string>
 
 enum class eQueryStatus

@@ -14,6 +14,8 @@
 
 #include<string>
 
+#include"DataBase.h"
+
 class UDSServer
 {
 public:
@@ -23,4 +25,7 @@ public:
                  UDSServer& operator=( const UDSServer& ) = delete;
            int   StartProcessing();
    std::string   ProcessQuery( const std::string &s_query ) const;
+
+private:
+   SysLogLogger sysLogger;
 };
