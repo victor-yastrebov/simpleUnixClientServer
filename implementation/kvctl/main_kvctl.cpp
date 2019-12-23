@@ -2,9 +2,18 @@
 #include"../kvd/DataBase.h"
 #include"../kvd/Daemon.h"
 
-int main()
+int main( int argc, char *argv[] )
 {
-   /**/
+   std::stringstream ss;
+   std::cout << "Argc: " << argc << std::endl;
+
+   for( int i = 1; i < argc; ++i) {
+      ss << argv[i] << " ";
+   }
+
+   std::string s_query = ss.str();
+   s_query.pop_back();
+
    SysLogLogger sl;
    {
       Daemon daemon;
@@ -49,10 +58,9 @@ int main()
    // return 0;
 
    UDSClient uds_client;
-   uds_client.Connect();
-   uds_client.StartSession();
-
-
-
-   return 0;
+   if( ! uds_client.Connect() )
+   {
+      return 1;
+   };
+   return uds_client.Query( s_query );
 }

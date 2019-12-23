@@ -9,13 +9,18 @@
  * @class UDSClient
  */
 
+#include<string>
+
 class UDSClient
 {
 public:
-          UDSClient() = default;
+          UDSClient();
          ~UDSClient() = default;
           UDSClient( const UDSClient& ) = delete;
           UDSClient& operator=( const UDSClient& ) = delete;
     int   Connect();
-    int   StartSession() const;
+    int   Query( const std::string &s_query ) const;
+
+private:
+    int socketId;
 };
