@@ -39,6 +39,7 @@ set(kvctl_headers ${kvctl_headers}
    "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/QueryResult.h"
 )
 
 set(kvctl_sources ${kvctl_sources}
@@ -46,10 +47,12 @@ set(kvctl_sources ${kvctl_sources}
    "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/QueryResult.cpp"
+   #"${CMAKE_CURRENT_LIST_DIR}/kvctl/bTree.cpp"
 )
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-add_executable(${KVD_PROJECT_NAME} ${kvd_headers} ${kvd_sources})
+# add_executable(${KVD_PROJECT_NAME} ${kvd_headers} ${kvd_sources})
 add_executable(${KVCTL_PROJECT_NAME} ${kvctl_headers} ${kvctl_sources})
 

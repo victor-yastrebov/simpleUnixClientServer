@@ -42,7 +42,6 @@ void DataBase::print_row(Row* row)
    sysLogger.LogToSyslog( "(", row->key, ", ", row->value, ")" );
 }
 
-
 NodeType DataBase::get_node_type(void* node) {
   uint8_t value = *((uint8_t*)(node + NODE_TYPE_OFFSET));
   return (NodeType)value;
@@ -63,7 +62,10 @@ void DataBase::set_node_root(void* node, bool is_root) {
   *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
 }
 
-uint32_t* DataBase::node_parent(void* node) { return static_cast<uint32_t*>( node ) + PARENT_POINTER_OFFSET; }
+uint32_t* DataBase::node_parent(void* node)
+{
+   return static_cast<uint32_t*>( node ) + PARENT_POINTER_OFFSET;
+}
 
 uint32_t* DataBase::internal_node_num_keys(void* node) {
   return static_cast<uint32_t*>( node ) + INTERNAL_NODE_NUM_KEYS_OFFSET;
@@ -136,8 +138,10 @@ void* DataBase::leaf_node_value(void* node, uint32_t cell_num)
   return leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
 }
 
-uint32_t DataBase::get_node_max_key(void* node) {
-  switch (get_node_type(node)) {
+uint32_t DataBase::get_node_max_key(void* node)
+{
+  switch (get_node_type(node))
+  {
     case NODE_INTERNAL:
       return *internal_node_key(node, *internal_node_num_keys(node) - 1);
     case NODE_LEAF:
@@ -146,12 +150,12 @@ uint32_t DataBase::get_node_max_key(void* node) {
 }
 
 void DataBase::print_constants() {
-  sysLogger.LogToSyslog("ROW_SIZE: %d\n", ROW_SIZE);
-  sysLogger.LogToSyslog("COMMON_NODE_HEADER_SIZE: %d\n", COMMON_NODE_HEADER_SIZE);
-  sysLogger.LogToSyslog("LEAF_NODE_HEADER_SIZE: %d\n", LEAF_NODE_HEADER_SIZE);
-  sysLogger.LogToSyslog("LEAF_NODE_CELL_SIZE: %d\n", LEAF_NODE_CELL_SIZE);
-  sysLogger.LogToSyslog("LEAF_NODE_SPACE_FOR_CELLS: %d\n", LEAF_NODE_SPACE_FOR_CELLS);
-  sysLogger.LogToSyslog("LEAF_NODE_MAX_CELLS: %d\n", LEAF_NODE_MAX_CELLS);
+  sysLogger.LogToSyslog("ROW_SIZE: ", ROW_SIZE);
+  sysLogger.LogToSyslog("COMMON_NODE_HEADER_SIZE: ", COMMON_NODE_HEADER_SIZE);
+  sysLogger.LogToSyslog("LEAF_NODE_HEADER_SIZE: ", LEAF_NODE_HEADER_SIZE);
+  sysLogger.LogToSyslog("LEAF_NODE_CELL_SIZE: ", LEAF_NODE_CELL_SIZE);
+  sysLogger.LogToSyslog("LEAF_NODE_SPACE_FOR_CELLS: ", LEAF_NODE_SPACE_FOR_CELLS);
+  sysLogger.LogToSyslog("LEAF_NODE_MAX_CELLS: ", LEAF_NODE_MAX_CELLS);
 }
 
 void* DataBase::get_page( Pager* pager, uint32_t page_num )
@@ -196,9 +200,9 @@ void* DataBase::get_page( Pager* pager, uint32_t page_num )
 }
 
 void DataBase::indent(uint32_t level) {
-  for (uint32_t i = 0; i < level; i++) {
+  /*for (uint32_t i = 0; i < level; i++) {
     sysLogger.LogToSyslog("  ");
-  }
+  }*/
 }
 
 void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_level) {
@@ -210,9 +214,10 @@ void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_
       num_keys = *leaf_node_num_cells(node);
       indent(indentation_level);
       sysLogger.LogToSyslog("- leaf (size", num_keys, ")");
-      for (uint32_t i = 0; i < num_keys; i++) {
+      for (uint32_t i = 0; i < num_keys; i++)
+      {
         indent(indentation_level + 1);
-        sysLogger.LogToSyslog("- ", *leaf_node_key(node, i));
+        sysLogger.LogToSyslog("  - ", *leafNodeKey(node, i));
       }
       break;
     case (NODE_INTERNAL):
@@ -238,9 +243,24 @@ void DataBase::serialize_row(Row* source, void* destination) {
   // memcpy(destination + EMAIL_OFFSET, &(source->email), EMAIL_SIZE);
 }
 
-void DataBase::deserialize_row( void *key, void* source, Row* destination ) {
-  memcpy(&(destination->value), source + VALUE_STR_OFFSET, VALUE_STR_SIZE);
-  memcpy(&(destination->key), key, KEY_STR_SIZE);
+std::string DataBase::getKey( Cursor* p_cursor )
+{
+   std::string str;
+   str.resize( KEY_STR_SIZE);
+
+   void *p_key = cursor_key( p_cursor );
+
+   memcpy( (void*)str.data(), p_key, KEY_STR_SIZE );
+   str.at(etalonKeySize) = '\0';
+
+   return str;
+}
+
+void DataBase::deserialize_row( void *key, void* source, Row* destination )
+{
+  memcpy( &( destination->value ), source + VALUE_STR_OFFSET, VALUE_STR_SIZE );
+  memcpy( &( destination->key ), key, KEY_STR_SIZE );
+  destination->key[etalonKeySize] = '\0';
   // memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
   // memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE);
   // memcpy(&(destination->email), source + EMAIL_OFFSET, EMAIL_SIZE);
@@ -586,7 +606,7 @@ MetaCommandResult DataBase::do_meta_command(InputBuffer* input_buffer, Table* ta
     db_close();
     return META_COMMAND_SUCCESS;
   } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
-    sysLogger.LogToSyslog("Tree:\n");
+    sysLogger.LogToSyslog( "Tree:" );
     print_tree(table->pager, 0, 0);
     return META_COMMAND_SUCCESS;
   } else if (strcmp(input_buffer->buffer, ".constants") == 0) {
@@ -611,7 +631,9 @@ PrepareResult DataBase::prepare_insert(InputBuffer* input_buffer, Statement* sta
     return PREPARE_SYNTAX_ERROR;
   }
 
-  if (strlen(key) > KEY_MAX_SIZE) {
+  const size_t key_len = strlen( key );
+  if( key_len != etalonKeySize )
+  {
      return PREPARE_STRING_TOO_LONG;
   }
 
@@ -631,7 +653,8 @@ PrepareResult DataBase::prepare_statement(InputBuffer* input_buffer,
   if (strncmp(input_buffer->buffer, "put", 3) == 0) {
     return prepare_insert(input_buffer, statement);
   }
-  if (strcmp(input_buffer->buffer, "list") == 0) {
+  if (strcmp(input_buffer->buffer, "list") == 0)
+  {
     statement->type = STATEMENT_LIST;
     return PREPARE_SUCCESS;
   }
@@ -645,7 +668,8 @@ go onto the end of the database file
 */
 uint32_t DataBase::get_unused_page_num(Pager* pager) { return pager->num_pages; }
 
-void DataBase::create_new_root(Table* table, uint32_t right_child_page_num) {
+void DataBase::create_new_root(Table* table, uint32_t right_child_page_num)
+{
   /*
   Handle splitting the root.
   Old root copied to new page, becomes left child.
@@ -720,17 +744,24 @@ void DataBase::update_internal_node_key(void* node, uint32_t old_key, uint32_t n
   *internal_node_key(node, old_child_index) = new_key;
 }
 
-void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
+void DataBase::leafNodeSplitAndInsert( Cursor* cursor, char* key, Row* value )
+{
   /*
   Create a new node and move half the cells over.
   Insert the new value in one of the two nodes.
   Update parent or create a new parent.
   */
-
   void* old_node = get_page(cursor->table->pager, cursor->page_num);
+
+  // получить ключ с наибольшим значением
+  // !!! надо править !!!
   uint32_t old_max = get_node_max_key(old_node);
+
+  // получаем номер страницы, которую надо будет создать
   uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
+  // создали страницу в памяти
   void* new_node = get_page(cursor->table->pager, new_page_num);
+
   initialize_leaf_node(new_node);
   *node_parent(new_node) = *node_parent(old_node);
   *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
@@ -741,19 +772,113 @@ void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* val
   evenly between old (left) and new (right) nodes.
   Starting from the right, move each key to correct position.
   */
+  for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--)
+  {
+    void* destination_node;
+    if (i >= LEAF_NODE_LEFT_SPLIT_COUNT)
+    {
+      destination_node = new_node;
+    }
+    else
+    {
+      destination_node = old_node;
+    }
+
+    uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
+    // void* destination = leaf_node_cell(destination_node, index_within_node);
+    void* destination = leafNodeCell(destination_node, index_within_node);
+
+    if (i == cursor->cell_num)
+    {
+      serialize_row(value,
+                    leaf_node_value(destination_node, index_within_node));
+      // *leaf_node_key(destination_node, index_within_node) = key;
+      memcpy(leafNodeKey(destination_node, index_within_node), key, strlen(key));
+    }
+    else if (i > cursor->cell_num)
+    {
+      memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
+    }
+    else
+    {
+      memcpy(destination, leaf_node_cell(old_node, i), LEAF_NODE_CELL_SIZE);
+    }
+  }
+
+  /* Update cell count on both leaf nodes */
+  *(leaf_node_num_cells(old_node)) = LEAF_NODE_LEFT_SPLIT_COUNT;
+  *(leaf_node_num_cells(new_node)) = LEAF_NODE_RIGHT_SPLIT_COUNT;
+
+  // if original node is root, than it has no parent
+  if (is_node_root(old_node))
+  {
+    return create_new_root(cursor->table, new_page_num);
+  }
+  else
+  {
+    uint32_t parent_page_num = *node_parent(old_node);
+    uint32_t new_max = get_node_max_key(old_node);
+    void* parent = get_page(cursor->table->pager, parent_page_num);
+
+    update_internal_node_key(parent, old_max, new_max);
+    internal_node_insert(cursor->table, parent_page_num, new_page_num);
+    return;
+  }
+}
+
+void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
+  /*
+  Create a new node and move half the cells over.
+  Insert the new value in one of the two nodes.
+  Update parent or create a new parent.
+  */
+
+  // нода = page = 4096 Mb  
+
+  // получение ноды, на которой сейчас находится курсор. Ее надо разбить на две
+  void* old_node = get_page(cursor->table->pager, cursor->page_num);
+  // получение значения максимального ключа среди cells, которые хранятся в ноде
+  uint32_t old_max = get_node_max_key(old_node);
+        
+  // получаем порядковый номер новой ноды, которая будет добалена в конец файла
+  uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
+  // физически создали новый объект ноды
+  void* new_node = get_page(cursor->table->pager, new_page_num);
+
+  // проинициализировали новый созданный объект как LEAF_NODE
+  initialize_leaf_node(new_node);
+
+  // ссылку на родителя для новой ноды выставляем такой же как и для старой ноды
+  *node_parent(new_node) = *node_parent(old_node);
+  // ссылку на своего брата для новой ноды выставляем такой же как и для старой ноды
+  *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
+  // Internal nodes will point to their children by storing the page number that stores the child
+  *leaf_node_next_leaf(old_node) = new_page_num;
+
+  /*
+  All existing keys plus new key should should be divided
+  evenly between old (left) and new (right) nodes.
+  Starting from the right, move each key to correct position.
+  */
   for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
     void* destination_node;
+    // LEAF_NODE_LEFT_SPLIT_COUNT - это половина от возможного числа детей у ноды
     if (i >= LEAF_NODE_LEFT_SPLIT_COUNT) {
       destination_node = new_node;
     } else {
       destination_node = old_node;
     }
+    // это просто порядковый номер, а не ключ
     uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
+    // это уже destination_cell
     void* destination = leaf_node_cell(destination_node, index_within_node);
 
+    // при ранее выполненном поиске выяснили, что надо вставить новое значение на эту позицию
     if (i == cursor->cell_num) {
+      // представили в бинарном виде
       serialize_row(value,
                     leaf_node_value(destination_node, index_within_node));
+      // выставили новый ключ
       *leaf_node_key(destination_node, index_within_node) = key;
     } else if (i > cursor->cell_num) {
       memcpy(destination, leaf_node_cell(old_node, i - 1), LEAF_NODE_CELL_SIZE);
@@ -766,14 +891,21 @@ void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* val
   *(leaf_node_num_cells(old_node)) = LEAF_NODE_LEFT_SPLIT_COUNT;
   *(leaf_node_num_cells(new_node)) = LEAF_NODE_RIGHT_SPLIT_COUNT;
 
+  // если у разбиваемой ноды не было родителя, то надо его создать
   if (is_node_root(old_node)) {
     return create_new_root(cursor->table, new_page_num);
   } else {
+    // смотрим на какой странице располагался родитель ноды, которую сейчас разбили
     uint32_t parent_page_num = *node_parent(old_node);
+    // получение значения максимального ключа среди cells, которые хранятся в ноде
     uint32_t new_max = get_node_max_key(old_node);
+    // получение ноды на которой хранится родитель
     void* parent = get_page(cursor->table->pager, parent_page_num);
 
+    // обновляем ключ в интернал ноде. !!!! надо править !!!
+    // внутри надо делать memcpy()
     update_internal_node_key(parent, old_max, new_max);
+    // вставка internal ноды. !!!! надо править !!!
     internal_node_insert(cursor->table, parent_page_num, new_page_num);
     return;
   }
@@ -786,7 +918,8 @@ void DataBase::leaf_node_insert(Cursor* cursor, char* key, Row* value) {
   if (num_cells >= LEAF_NODE_MAX_CELLS)
   {
     // Node full
-    // leaf_node_split_and_insert(cursor, key, value);
+    // leafNodeSplitAndInsert(cursor, key, value);
+    sysLogger.LogToSyslog( "Or no, its not imlemented yet((" );
     return;
   }
 
@@ -803,11 +936,12 @@ void DataBase::leaf_node_insert(Cursor* cursor, char* key, Row* value) {
   *(leaf_node_num_cells(node)) += 1;
   // выставить ключ для конкретной ячейки, расположенной на page
   // *(leaf_node_key(node, cursor->cell_num)) = key;
-  memcpy(leafNodeKey(node, cursor->cell_num), key, strlen(key));
+  // we need +1 for terminateing zero in the string end ???
+  memcpy(leafNodeKey(node, cursor->cell_num), key, strlen(key) /*+ 1*/);
   serialize_row(value, leafNodeValue(node, cursor->cell_num));
 }
 
-ExecuteResult DataBase::execute_insert(Statement* statement, Table* table) {
+QueryResult DataBase::execute_insert(Statement* statement, Table* table) {
   Row* row_to_insert = &(statement->row_to_insert);
 
   // key_to_insert - это ключ не в raw, а ключ для BTree дерева
@@ -824,7 +958,7 @@ ExecuteResult DataBase::execute_insert(Statement* statement, Table* table) {
     char* key_at_index = leafNodeKey(node, cursor->cell_num);
     if( 0 == compareKeys( key_at_index, key_to_insert ) )
     {
-       return EXECUTE_DUPLICATE_KEY;
+       return QueryResult( eQueryStatus::esDuplicateKey );
     }
   }
 
@@ -832,26 +966,39 @@ ExecuteResult DataBase::execute_insert(Statement* statement, Table* table) {
 
   free(cursor);
 
-  return EXECUTE_SUCCESS;
+  return QueryResult( eQueryStatus::esSuccss );;
 }
 
-ExecuteResult DataBase::execute_list(Statement* statement, Table* table) {
+QueryResult DataBase::execute_list(Statement* statement, Table* table) {
   Cursor* cursor = table_start( table );
 
   Row row;
+  std::string s_key;
+  std::stringstream ss;
   while( ! ( cursor->end_of_table ) )
   {
-    deserialize_row( cursor_key(cursor), cursor_value(cursor), &row );
-    print_row(&row);
-    cursor_advance(cursor);
+    s_key = getKey( cursor );
+
+    // deserialize_row( cursor_key(cursor), cursor_value(cursor), &row );
+    ss << s_key;
+    ss << std::endl;
+    // print_row(&row);
+
+    cursor_advance( cursor );
   }
+
+
 
   free(cursor);
 
-  return EXECUTE_SUCCESS;
+  std::string s = ss.str();
+  s.pop_back();
+
+  QueryResult query_result {eQueryStatus::esSuccss, ss.str()};
+  return query_result;
 }
 
-ExecuteResult DataBase::execute_statement(Statement* statement, Table* table)
+QueryResult DataBase::execute_statement(Statement* statement, Table* table)
 {
    switch (statement->type)
    {
@@ -866,58 +1013,70 @@ ExecuteResult DataBase::execute_statement(Statement* statement, Table* table)
    }
 }
 
-int DataBase::ExecuteQuery( const std::string &s_query )
+QueryResult DataBase::ExecuteQuery( const std::string &s_query )
 {
    input_buffer = new_input_buffer();
    read_input(input_buffer, s_query );
 
-   if (input_buffer->buffer[0] == '.') {
-     switch (do_meta_command(input_buffer, table)) {
-       case (META_COMMAND_SUCCESS):
-          return 1;
-          //continue;
-       case (META_COMMAND_UNRECOGNIZED_COMMAND):
-         sysLogger.LogToSyslog("Unrecognized command '%s'\n", input_buffer->buffer);
-         return 1;
-         // continue;
-     }
+   QueryResult query_result;
+
+   if( input_buffer->buffer[0] == '.' )
+   {
+      db_open();
+
+      switch( do_meta_command( input_buffer, table ) )
+      {
+         case META_COMMAND_SUCCESS :
+            query_result.queryStatus = eQueryStatus::esSuccss;
+            break;
+         case META_COMMAND_UNRECOGNIZED_COMMAND :
+            sysLogger.LogToSyslog("Unrecognized command '%s'\n", input_buffer->buffer);
+            query_result.queryStatus = eQueryStatus::esInvalidCmd;
+            break;
+      }
+
+      db_close();
+
+      return query_result;
    }
 
    Statement statement;
-   switch (prepare_statement(input_buffer, &statement)) {
-     case (PREPARE_SUCCESS):
+   switch( prepare_statement( input_buffer, &statement ) )
+   {
+     case PREPARE_SUCCESS:
        break;
-     case (PREPARE_STRING_TOO_LONG):
+     case PREPARE_STRING_TOO_LONG:
        sysLogger.LogToSyslog("String is too long");
-       return 1;
-       // continue;
-     case (PREPARE_SYNTAX_ERROR):
+       query_result.queryStatus = eQueryStatus::esInvalidCmd;
+       return query_result;
+     case PREPARE_SYNTAX_ERROR:
        sysLogger.LogToSyslog("Syntax error. Could not parse statement");
-       return 1;
-       // continue;
-     case (PREPARE_UNRECOGNIZED_STATEMENT):
+       query_result.queryStatus = eQueryStatus::esInvalidCmd;
+       return query_result;
+     case PREPARE_UNRECOGNIZED_STATEMENT:
        sysLogger.LogToSyslog("Unrecognized keyword at start of ", input_buffer->buffer);
-       return 1;
-       // continue;
+       query_result.queryStatus = eQueryStatus::esInvalidCmd;
+       return query_result;
    }
 
-   int result = 0;
    db_open();
 
-   switch (execute_statement(&statement, table)) {
-     case (EXECUTE_SUCCESS):
-       sysLogger.LogToSyslog("Executed");
-       result = 0;
+   query_result =
+      execute_statement(&statement, table);
+
+   switch( query_result.queryStatus )
+   {
+     case( eQueryStatus::esSuccss ):
+       sysLogger.LogToSyslog( "Executed" );
        break;
-     case (EXECUTE_DUPLICATE_KEY):
-       sysLogger.LogToSyslog("Error: Duplicate key");
-       result = 1;
+     case( eQueryStatus::esDuplicateKey ):
+       sysLogger.LogToSyslog( "Error: Duplicate key" );
        break;
    }
 
    db_close();
 
-   return 0;
+   return query_result;
 }
 
 /*

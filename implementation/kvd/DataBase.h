@@ -17,6 +17,7 @@
 #include<sstream>
 #include<syslog.h>
 
+#include"QueryResult.h"
 
 typedef struct {
   char* buffer;
@@ -24,10 +25,6 @@ typedef struct {
   ssize_t input_length;
 } InputBuffer;
 
-typedef enum {
-  EXECUTE_SUCCESS,
-  EXECUTE_DUPLICATE_KEY,
-} ExecuteResult;
 
 typedef enum {
   META_COMMAND_SUCCESS,
@@ -49,6 +46,8 @@ typedef enum { STATEMENT_PUT, STATEMENT_LIST } StatementType;
 
 #define KEY_MAX_SIZE 255
 #define VALUE_MAX_SIZE 255
+
+const size_t etalonKeySize = 10;
 
 typedef struct {
   uint32_t id;
@@ -210,11 +209,11 @@ private:
 class DataBase
 {
 public:
-          DataBase( const std::string &sDbFilePath );
-         ~DataBase();
-          DataBase( const DataBase& ) = delete;
-          DataBase& operator=( const DataBase& ) = delete;
-    int   ExecuteQuery( const std::string &s );
+                 DataBase( const std::string &sDbFilePath );
+                ~DataBase();
+                 DataBase( const DataBase& ) = delete;
+                 DataBase& operator=( const DataBase& ) = delete;
+   QueryResult   ExecuteQuery( const std::string &s );
 
 private:
        void   print_row(Row* row);
@@ -266,15 +265,17 @@ private:
    void   update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key);
    void   leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value);
    void   leaf_node_insert(Cursor* cursor, char* key, Row* value);
-   ExecuteResult   execute_insert(Statement* statement, Table* table);
-   ExecuteResult   execute_list(Statement* statement, Table* table);
-   ExecuteResult   execute_statement(Statement* statement, Table* table);
+   QueryResult   execute_insert(Statement* statement, Table* table);
+   QueryResult   execute_list(Statement* statement, Table* table);
+   QueryResult   execute_statement(Statement* statement, Table* table);
    int   compareKeys( char *key1, char* key2 ) const;
    char* leafNodeKey(void* node, uint32_t cell_num);
    void* leafNodeCell(void* node, uint32_t cell_num);
    void*  leafNodeValue(void* node, uint32_t cell_num);
    Cursor*   createCursorForFirstCell( Table* table ) const;
    void* cursor_key(Cursor* cursor);
+   void leafNodeSplitAndInsert(Cursor* cursor, char *key, Row* value);
+   std::string   getKey( Cursor* p_cursor );
 
    InputBuffer* input_buffer;
    Table* table;
