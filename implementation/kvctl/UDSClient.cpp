@@ -19,10 +19,24 @@
 #include"UDSClient.h"
 #include"AppProtocol.h"
 
+/**
+ * CTOR
+ */
 UDSClient::UDSClient() :
    socketId( -1 )
 {
 
+}
+
+/**
+ * DTOR
+ */
+UDSClient::~UDSClient()
+{
+   if( socketId > 0 )
+   {
+      close( socketId );
+   }
 }
 
 /**
@@ -71,8 +85,6 @@ int UDSClient::Query( const std::string &s_query ) const
    const size_t buf_size = 8192;
    char buf[buf_size];
 
-   std::cout << s_query << std::endl;
-
    std::vector<BYTE> v_query = app_protocol.encodeMsg( s_query );
 
    if( send( socketId, v_query.data(), v_query.size(), 0 ) < 0 )
@@ -96,10 +108,13 @@ int UDSClient::Query( const std::string &s_query ) const
    {
       std::cout << "Received msg is not full" << std::endl;
    }
-
-   std::cout << s_answer << std::endl;
-
-   if( socketId > 0 ) close( socketId );
+   else
+   {
+      if( s_answer != "Empty response")
+      {
+         std::cout << s_answer;
+      }
+   }
 
    return 0;
 }

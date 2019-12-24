@@ -31,7 +31,7 @@
  * CTOR
  */
 UDSServer::UDSServer() :
-	nMaxClients( 4096 )   // max number of online clients
+   nMaxClients( 4096 )   // max number of online clients
 {
 
 }
@@ -193,6 +193,8 @@ int UDSServer::StartProcessing()
             std::vector<BYTE> v_result =
                app_protocol.encodeMsg( qr.sData );
 
+            sysLogger.LogToSyslog( "Data to send: ", qr.sData );
+
             send( *it, v_result.data(), v_result.size(), 0 );
 
             if( s_query == ".exit" )
@@ -220,20 +222,4 @@ int UDSServer::StartProcessing()
 
 
    return 1;
-}
-
-/**
- * Process incoming DB query
- */
-// C++17 std::stringstream
-std::string UDSServer::ProcessQuery( const std::string &s_query ) const
-{
-
-   if(s_query == "LIST") return "bar baz max tRex";
-   if(s_query == "PUT") return "PUT query OK";
-   if(s_query == "GET") return "GET query OK";
-   if(s_query == "ERASE") return "ERASE query OK";
-   if(s_query == "STOP") return "STOP";
-
-   return "UNKNOWN CMD";
 }

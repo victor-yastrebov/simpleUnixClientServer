@@ -65,7 +65,9 @@ int main( int argc, char *argv[] )
       // sl.LogToSyslog( "---New instance start---" );
 
       // DataBase db( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
+      // auto ret = db.ExecuteQuery( "list" );
       // db.ExecuteQuery( ".constants" );
+      // return 1;
 /*
       db.ExecuteQuery( "put aeystring1 valuestring1" );
       db.ExecuteQuery( "put beystring2 valuestring2" );

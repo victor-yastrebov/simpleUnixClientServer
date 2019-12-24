@@ -15,7 +15,7 @@ class UDSClient
 {
 public:
           UDSClient();
-         ~UDSClient() = default;
+         ~UDSClient();
           UDSClient( const UDSClient& ) = delete;
           UDSClient& operator=( const UDSClient& ) = delete;
     int   Connect();

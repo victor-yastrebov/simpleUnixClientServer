@@ -990,7 +990,10 @@ QueryResult DataBase::execute_list(Statement* statement, Table* table) {
   free(cursor);
 
   std::string s = ss.str();
-  s.pop_back();
+  if( ! s.empty() )
+  {
+     s.pop_back();
+  }
 
   QueryResult query_result {eQueryStatus::esSuccss, ss.str()};
   return query_result;
