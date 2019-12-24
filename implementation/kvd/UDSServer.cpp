@@ -31,7 +31,8 @@
  * CTOR
  */
 UDSServer::UDSServer() :
-   nMaxClients( 4096 )   // max number of online clients
+   nMaxClients( 4096 ),   // max number of online clients
+   listenerSocket( -1 )
 {
 
 }
@@ -45,175 +46,230 @@ UDSServer::~UDSServer()
 }
 
 /**
- * Listen and process incoming connections
+ * Set up server socket for listening incoming connections
  */
-int UDSServer::StartProcessing()
+int UDSServer::prepareListenerSocket()
 {
-   sysLogger.LogToSyslog( "KVD service started" );
-
-   int listener;
-   struct sockaddr_un addr;
-   char buf[1024];
-   int bytes_read;
-
-   listener = socket(PF_UNIX, SOCK_STREAM, 0);
-   if( listener < 0 )
+   listenerSocket = socket( PF_UNIX, SOCK_STREAM, 0 );
+   if( listenerSocket < 0 )
    {
       sysLogger.LogToSyslog( "Create listener failed" );
-      return 1;
+      return 0;
    }
 
    // set up socket for non blocking mode
-   fcntl( listener, F_SETFL, O_NONBLOCK );
+   fcntl( listenerSocket, F_SETFL, O_NONBLOCK );
 
-   memset( &addr, 0, sizeof( addr ) );
+   struct sockaddr_un addr = { 0 };
+   // memset( &addr, 0, sizeof( addr ) );
    addr.sun_family = AF_UNIX;
    strcpy( addr.sun_path, UDS::sServerSockFile.c_str() );
    unlink( UDS::sServerSockFile.c_str() );
-   if( bind( listener, ( struct sockaddr *)&addr, sizeof( addr ) ) < 0 )
+
+   if( bind( listenerSocket,
+             reinterpret_cast<struct sockaddr *>( &addr ),
+             sizeof( addr )
+           ) < 0 )
    {
       sysLogger.LogToSyslog( "Bind listener socket failed" );
-      return 2;
+      return 0;
    }
 
    const int max_waiting_conn = 2;
-   listen( listener, max_waiting_conn );
+   listen( listenerSocket, max_waiting_conn );
 
-   std::set<int> clients;
-   // here the incoming data is stored 
-   // std::unorderd_map<int, Client> clients_map;
-   clients.clear();
+   return 0;
+}
 
+/**
+ * Process connected sockets queries
+ */
+int UDSServer::processConnectedSockets( const std::string& s_path_to_db )
+{
    bool b_should_terminate = false;
-
-   DataBase db( "/tmp/kvd_db.txt" );
+   char buf[1024];
+   int bytes_read;
 
    AppProtocol app_protocol;
-   std::vector<BYTE> v_query_result( 32768 );
+   DataBase db( s_path_to_db );
+
+   for( std::set<int>::iterator it = connectedSockets.begin();
+        it != connectedSockets.end(); it++ )
+   {
+      if( FD_ISSET( *it, &readSet ) )
+      {
+         // Поступили данные от клиента, читаем их
+         bytes_read = recv( *it, buf, 1024, 0 );
+
+         if( bytes_read <= 0 )
+         {
+            sysLogger.LogToSyslog( "Connection is terminated" );
+            // Соединение разорвано, удаляем сокет из множества
+            close( *it );
+            connectedSockets.erase( *it );
+            continue;
+         }
+
+         sysLogger.LogToSyslog( "Recv num bytes: ", bytes_read);
+
+         // В С++17 можно было бы использовать std::optional
+         // для возвращаемого значения, не вводя переменную status_ok
+         bool status_ok = false;
+         const std::string s_query = app_protocol.decodeMsg(
+            std::vector<BYTE>( buf, buf + bytes_read ), status_ok );
+
+         if( ! status_ok )
+         {
+            sysLogger.LogToSyslog( "Received msg is not full" );
+            continue;
+         }
+
+         std::stringstream ss;
+         ss << "Receive query: " << s_query << std::endl;
+         sysLogger.LogToSyslog( ss.str().c_str() );
+
+         QueryResult qr = db.ExecuteQuery( s_query );
+         sysLogger.LogToSyslog( "Query result is: ", qr.sData );
+
+         if( qr.sData.empty() )
+         {
+            qr.sData = "Empty response";
+         }
+         std::vector<BYTE> v_result =
+            app_protocol.encodeMsg( qr.sData );
+
+         sysLogger.LogToSyslog( "Data to send: ", qr.sData );
+
+         send( *it, v_result.data(), v_result.size(), 0 );
+
+         if( s_query == ".exit" )
+         {
+            b_should_terminate = true;
+            break;
+         }
+      }
+   } // end of for (it = client.begin() ...)
+
+   return b_should_terminate;
+}
+
+/**
+ * Accept new connection if needed
+ */
+void UDSServer::processNewConnection()
+{
+   if( FD_ISSET( listenerSocket, &readSet ) )
+   {
+      const int sock = accept( listenerSocket, NULL, NULL );
+      if( sock < 0 )
+      {
+         sysLogger.LogToSyslog( "Accept failed" );
+         return;
+      }
+
+      // set up socket for non-blocking mode
+      fcntl( sock, F_SETFL, O_NONBLOCK );
+      connectedSockets.insert( sock );
+   }
+}
+
+/**
+ * Switch sockets to non-blocking mode
+ */
+void UDSServer::setNonBlockingMode()
+{
+   FD_ZERO( &readSet );
+   FD_SET( listenerSocket, &readSet );
+
+   for( std::set<int>::iterator it = connectedSockets.begin();
+        it != connectedSockets.end(); it++ )
+   {
+      FD_SET( *it, &readSet );
+   }
+}
+
+/**
+ * Wait till one of the sockets have some action
+ */
+int UDSServer::waitForEvents()
+{
+   // Set timeout
+   timeval timeout;
+   timeout.tv_sec = 15;
+   timeout.tv_usec = 0;
+
+   // Wait for events in one of the sockets
+   const int mx =std::max( listenerSocket,
+      *std::max_element( connectedSockets.begin(), connectedSockets.end() ) );
+
+   // n must greater by 1 of the max element in the set
+   if( select( mx + 1, &readSet, NULL, NULL, &timeout ) <= 0 )
+   {
+      sysLogger.LogToSyslog( "select timeout. No active sockets found" );
+      return -1;
+   }
+
+   return 0;
+}
+
+/**
+ * Close connected sockets
+ */
+void UDSServer::closeSockets()
+{
+   for( std::set<int>::iterator it = connectedSockets.begin();
+        it != connectedSockets.end(); it++ )
+   {
+      close( *it );
+   }
+}
+
+/**
+ * Start server base logic
+ */
+int UDSServer::processSockets( const std::string &s_path_to_db )
+{
+   // std::set<int> clients;
+   // here the incoming data is stored
+   // std::unorderd_map<int, Client> clients_map;
+   connectedSockets.clear();
 
    while( 1 )
    {
-      // Заполняем множество сокетов из которых нам требуется читать данные
-      fd_set readset;
-      FD_ZERO( &readset );
-      FD_SET( listener, &readset );   // добавляет дескриптор listener в множество readset
+      setNonBlockingMode();
 
-      for( std::set<int>::iterator it = clients.begin(); it != clients.end(); it++ )
+      if( waitForEvents() < 0)
       {
-         FD_SET(*it, &readset);
-      }
-
-      // Задаём таймаут
-      timeval timeout;
-      timeout.tv_sec = 15;
-      timeout.tv_usec = 0;
-
-      // Ждём события в одном из сокетов
-      int mx = std::max( listener, *std::max_element( clients.begin(), clients.end() ) );
-
-      // n (первый парметр) должен быть на единицу больше самого большого номера описателей из всех наборов.
-      if( select( mx+1, &readset, NULL, NULL, &timeout ) <= 0 )
-      {
-         sysLogger.LogToSyslog( "select timeout. No active sockets found" );
          continue;
       }
 
-      // Определяем тип события и выполняем соответствующие действия
-      if( FD_ISSET( listener, &readset ) )   // проверяет, содержится ли дескриптор fd в множестве set
+      processNewConnection();
+      const int b_should_terminate = processConnectedSockets( s_path_to_db );
+
+      if( b_should_terminate )
       {
-         // Поступил новый запрос на соединение, используем accept
-         int sock = accept( listener, NULL, NULL );
-         if( sock < 0 )
-         {
-            sysLogger.LogToSyslog( "Accept failed" );
-            return 3;
-         }
-
-         // set up socket for non-blocking mode
-         fcntl( sock, F_SETFL, O_NONBLOCK );
-
-         clients.insert( sock );
-     }
-
-     for( std::set<int>::iterator it = clients.begin(); it != clients.end(); it++ )
-     {
-         if( FD_ISSET( *it, &readset ) )
-         {
-            // Поступили данные от клиента, читаем их
-            bytes_read = recv( *it, buf, 1024, 0 );
-
-            if( bytes_read <= 0 )
-            {
-               sysLogger.LogToSyslog( "Connection is terminated" );
-               // Соединение разорвано, удаляем сокет из множества
-               close( *it );
-               clients.erase( *it );
-               continue;
-            }
-
-            sysLogger.LogToSyslog( "Recv num bytes: ", bytes_read);
-
-            /*bool a = true;
-            while(a){
-               int aa = 0;
-            }*/
-
-            // В С++17 можно было бы использовать std::optional
-            // для возвращаемого значения, не вводя переменную status_ok
-            bool status_ok = false;
-            const std::string s_query = app_protocol.decodeMsg(
-               std::vector<BYTE>( buf, buf + bytes_read ), status_ok );
-
-            if( ! status_ok )
-            {
-               sysLogger.LogToSyslog( "Received msg is not full" );
-               continue;
-            }
-
-            std::stringstream ss;
-            ss << "Receive query: " << s_query << std::endl;
-            sysLogger.LogToSyslog( ss.str().c_str() );
-
-            QueryResult qr = db.ExecuteQuery( s_query );
-            sysLogger.LogToSyslog( "Query result is: ", qr.sData );
-
-            // Отправляем данные обратно клиенту
-            // sysLogger.LogToSyslog( "Sending back: " << s_ans << std::endl;
-
-            if( qr.sData.empty() )
-            {
-               qr.sData = "Empty response";
-            }
-            std::vector<BYTE> v_result =
-               app_protocol.encodeMsg( qr.sData );
-
-            sysLogger.LogToSyslog( "Data to send: ", qr.sData );
-
-            send( *it, v_result.data(), v_result.size(), 0 );
-
-            if( s_query == ".exit" )
-            {
-               b_should_terminate = true;
-               break;
-            }
-         }
-      } // end of for (it = client.begin() ...)
-
-     if( b_should_terminate )
-     {
-        for( std::set<int>::iterator it = clients.begin(); it != clients.end(); it++ )
-        {
-            close( *it );
-        }
-        break;
-     }
+         closeSockets();
+         break;
+      }
 
      // run over std::um if some of the objects are in state 1 -> than do send()
 
    } // end of while( 1 )
 
-   sysLogger.LogToSyslog( "LOOP is DONE" );
-
-
    return 1;
+}
+
+/**
+ * Listen and process incoming connections
+ */
+int UDSServer::startProcessing( const std::string &s_path_to_db )
+{
+   sysLogger.LogToSyslog( "KVD service started" );
+   if( prepareListenerSocket() < 0 )
+   {
+      sysLogger.LogToSyslog( "Failed to open server listening socket" );
+      return 1;
+   }
+
+   return processSockets( s_path_to_db );
 }

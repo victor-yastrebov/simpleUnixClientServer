@@ -13,10 +13,11 @@ int main()
       return EXIT_SUCCESS;
    }
 
+   const std::string s_path_to_db( "/tmp/kvd_db.txt" );
    UDSServer server;
-   server.StartProcessing();
+   const int ret = server.startProcessing( s_path_to_db );
 
-   syslog( LOG_NOTICE, "Before end of main" );
+   syslog( LOG_NOTICE, "Start processing has finished" );
 
-   return EXIT_SUCCESS;
+   return ret;
 }
