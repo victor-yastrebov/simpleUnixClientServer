@@ -24,11 +24,14 @@
 #include"UDS.h"
 #include"UDSServer.h"
 #include"QueryResult.h"
+#include"Client.h"
+#include"AppProtocol.h"
 
 /**
  * CTOR
  */
-UDSServer::UDSServer()
+UDSServer::UDSServer() :
+	nMaxClients( 4096 )   // max number of online clients
 {
 
 }
@@ -77,11 +80,16 @@ int UDSServer::StartProcessing()
    listen( listener, max_waiting_conn );
 
    std::set<int> clients;
+   // here the incoming data is stored 
+   // std::unorderd_map<int, Client> clients_map;
    clients.clear();
 
    bool b_should_terminate = false;
 
-   DataBase db( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
+   DataBase db( "/tmp/kvd_db.txt" );
+
+   AppProtocol app_protocol;
+   std::vector<BYTE> v_query_result( 32768 );
 
 /*
    bool a = true;
@@ -149,28 +157,49 @@ int UDSServer::StartProcessing()
                continue;
             }
 
-             const std::string s_query( buf, bytes_read );
-             std::stringstream ss;
-             ss << "Receive query: " << s_query << std::endl;
-             sysLogger.LogToSyslog( ss.str().c_str() );
+            sysLogger.LogToSyslog( "Recv num bytes: ", bytes_read);
 
+            /*bool a = true;
+            while(a){
+               int aa = 0;
+            }*/
 
-             QueryResult qr = db.ExecuteQuery( s_query );
+            // В С++17 можно было бы использовать std::optional
+            // для возвращаемого значения, не вводя переменную status_ok
+            bool status_ok = false;
+            const std::string s_query = app_protocol.decodeMsg(
+               std::vector<BYTE>( buf, buf + bytes_read ), status_ok );
 
-             sysLogger.LogToSyslog( "Query result is: ", qr.sData );
+            if( ! status_ok )
+            {
+               sysLogger.LogToSyslog( "Received msg is not full" );
+               continue;
+            }
 
+            std::stringstream ss;
+            ss << "Receive query: " << s_query << std::endl;
+            sysLogger.LogToSyslog( ss.str().c_str() );
 
-             sysLogger.LogToSyslog( "After execute" );
+            QueryResult qr = db.ExecuteQuery( s_query );
+            sysLogger.LogToSyslog( "Query result is: ", qr.sData );
 
-             // Отправляем данные обратно клиенту
-             // sysLogger.LogToSyslog( "Sending back: " << s_ans << std::endl;
-             send( *it, qr.sData.c_str(), qr.sData.size(), 0 );
+            // Отправляем данные обратно клиенту
+            // sysLogger.LogToSyslog( "Sending back: " << s_ans << std::endl;
 
-             if( s_query == ".exit" )
-             {
-                b_should_terminate = true;
-                break;
-             }
+            if( qr.sData.empty() )
+            {
+               qr.sData = "Empty response";
+            }
+            std::vector<BYTE> v_result =
+               app_protocol.encodeMsg( qr.sData );
+
+            send( *it, v_result.data(), v_result.size(), 0 );
+
+            if( s_query == ".exit" )
+            {
+               b_should_terminate = true;
+               break;
+            }
          }
       } // end of for (it = client.begin() ...)
 
@@ -182,6 +211,8 @@ int UDSServer::StartProcessing()
         }
         break;
      }
+
+     // run over std::um if some of the objects are in state 1 -> than do send()
 
    } // end of while( 1 )
 

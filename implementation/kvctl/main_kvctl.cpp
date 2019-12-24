@@ -2,25 +2,67 @@
 #include"../kvd/DataBase.h"
 #include"../kvd/Daemon.h"
 
-int main( int argc, char *argv[] )
+#include"AppProtocol.h"
+
+void printHelp()
+{
+   std::cout << "Client for database by va.yastrebov." << std::endl;
+   std::cout << "Usage examples: " << std::endl;
+   std::cout << " - PUT <key> <value>" << std::endl;
+   std::cout << " - GET <key>" << std::endl;
+   std::cout << " - ERASE [key]" << std::endl;
+   std::cout << " - LIST [prefix]" << std::endl;
+}
+
+/**
+ * Create query string from input CLI args
+ */
+std::string getQuery( const int argc, const char *const argv[] )
 {
    std::stringstream ss;
-   std::cout << "Argc: " << argc << std::endl;
-
-   for( int i = 1; i < argc; ++i) {
+   for( int i = 1; i < argc; ++i)
+   {
       ss << argv[i] << " ";
    }
 
    std::string s_query = ss.str();
-   s_query.pop_back();
+   if( argc > 1 )
+   {
+      s_query.pop_back();
+   }
+
+   return s_query;
+}
+
+void testMe(std::string s_query)
+{
+   AppProtocol ap;
+   std::vector<unsigned char> v = ap.encodeMsg( s_query );
+   bool status_ok = false;
+   std::string ret = ap.decodeMsg( v, status_ok );
+
+   std::cout << s_query << std::endl;
+   std::cout << ret << std::endl;
+}
+
+int main( int argc, char *argv[] )
+{
+   const std::string s_query = getQuery( argc, argv );
+
+   // testMe( s_query );
+
+   if( s_query.empty() )
+   {
+      printHelp();
+      return 0;
+   }
 
    SysLogLogger sl;
    {
       Daemon daemon;
 
       // if(!daemon.Daemonise()) return 1;
-
-      sl.LogToSyslog( "---New instance start---" );
+      // sl.LogToSyslog( "---New instance start---" );
 
       // DataBase db( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
       // db.ExecuteQuery( ".constants" );

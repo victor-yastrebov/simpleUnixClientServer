@@ -987,8 +987,6 @@ QueryResult DataBase::execute_list(Statement* statement, Table* table) {
     cursor_advance( cursor );
   }
 
-
-
   free(cursor);
 
   std::string s = ss.str();

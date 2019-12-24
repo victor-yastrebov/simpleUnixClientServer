@@ -15,6 +15,7 @@
 #include<string>
 
 #include"DataBase.h"
+#include"Client.h"
 
 class UDSServer
 {
@@ -27,5 +28,6 @@ public:
    std::string   ProcessQuery( const std::string &s_query ) const;
 
 private:
-   SysLogLogger sysLogger;
+    SysLogLogger   sysLogger;
+       const int   nMaxClients;
 };
