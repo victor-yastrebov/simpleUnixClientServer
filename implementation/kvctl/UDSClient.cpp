@@ -54,8 +54,8 @@ int UDSClient::Connect()
    struct sockaddr_un addr;
    memset( &addr, 0, sizeof( addr ) );
    addr.sun_family = AF_UNIX;
-   strcpy( addr.sun_path, CLIENT_SOCK_FILE );
-   unlink( CLIENT_SOCK_FILE );
+   strcpy( addr.sun_path, UDS::sClientSockFile.c_str() );
+   unlink( UDS::sClientSockFile.c_str() );
 
    if( bind( socketId, ( struct sockaddr * )&addr, sizeof( addr ) ) < 0 )
    {
@@ -65,7 +65,7 @@ int UDSClient::Connect()
 
    memset( &addr, 0, sizeof( addr ) );
    addr.sun_family = AF_UNIX;
-   strcpy( addr.sun_path, SERVER_SOCK_FILE );
+   strcpy( addr.sun_path, UDS::sServerSockFile.c_str() );
    if( connect( socketId, ( struct sockaddr * )&addr, sizeof( addr ) ) == -1 )
    {
       std::cout << "Error: failed to connect to remote socket" << std::endl;

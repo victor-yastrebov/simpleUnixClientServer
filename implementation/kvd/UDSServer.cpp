@@ -68,8 +68,8 @@ int UDSServer::StartProcessing()
 
    memset( &addr, 0, sizeof( addr ) );
    addr.sun_family = AF_UNIX;
-   strcpy( addr.sun_path, SERVER_SOCK_FILE );
-   unlink( SERVER_SOCK_FILE );
+   strcpy( addr.sun_path, UDS::sServerSockFile.c_str() );
+   unlink( UDS::sServerSockFile.c_str() );
    if( bind( listener, ( struct sockaddr *)&addr, sizeof( addr ) ) < 0 )
    {
       sysLogger.LogToSyslog( "Bind listener socket failed" );
@@ -91,12 +91,6 @@ int UDSServer::StartProcessing()
    AppProtocol app_protocol;
    std::vector<BYTE> v_query_result( 32768 );
 
-/*
-   bool a = true;
-   while(a){
-      int aa = 0;
-   }
-*/
    while( 1 )
    {
       // Заполняем множество сокетов из которых нам требуется читать данные

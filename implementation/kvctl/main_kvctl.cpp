@@ -64,7 +64,12 @@ int main( int argc, char *argv[] )
       // if(!daemon.Daemonise()) return 1;
       // sl.LogToSyslog( "---New instance start---" );
 
-      // DataBase db( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
+      // DataBase db( "/tmp/my_db.txt" );
+      // DataBase db( "/tmp/my_db_dummy.txt" );
+      //db.ExecuteQuery( ".exit" );
+
+      // return 1;
+
       // auto ret = db.ExecuteQuery( "list" );
       // db.ExecuteQuery( ".constants" );
       // return 1;

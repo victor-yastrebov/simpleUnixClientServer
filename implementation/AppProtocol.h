@@ -28,10 +28,10 @@ public:
          std::string   decodeMsg( const std::vector<BYTE> &v_packet, bool &status_ok ) const;
 
 private:
-                           BYTE   getByteInPosition( const int val, const int pos ) const;
-                            int   getFieldValueOfFourBytesLen() const;
-              std::vector<BYTE>   genLenField( const int len ) const;
+                        BYTE   getByteInPosition( const int val, const int pos ) const;
+                         int   getFieldValueOfFourBytesLen() const;
+           std::vector<BYTE>   genLenField( const int len ) const;
 
-      mutable DataConstIterator   itData;
-                      const int   nHeaderSize = 4;
+   mutable DataConstIterator   itData;
+                   const int   nHeaderSize = 4;
 };

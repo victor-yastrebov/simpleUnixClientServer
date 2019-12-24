@@ -1,8 +1,22 @@
-#ifndef IPC_H
-#define IPC_H
+/**
+ *
+ * @author <va.yastrebov>
+ * @description
+ * <pre>
+ *    Class contains file adressed for Client-Server
+ *    Unix Domain Socket communications
+ * </pre>
+ *
+ * @class UDS
+ */
 
-// [TODO] use another pathes
-#define CLIENT_SOCK_FILE "/home/user/UnixClientServer/unix-domain-socket-example-master/client.sock"
-#define SERVER_SOCK_FILE "/home/user/UnixClientServer/unix-domain-socket-example-master/server.sock"
+#pragma once
 
-#endif
+#include<string>
+
+struct UDS
+{
+   // In C++17 we can declare and define variables in a header file
+   static std::string sClientSockFile;
+   static std::string sServerSockFile;
+};

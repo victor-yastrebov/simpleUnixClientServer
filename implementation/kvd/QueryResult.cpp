@@ -11,18 +11,27 @@
 
 #include"QueryResult.h"
 
+/**
+ * CTOR
+ */
 QueryResult::QueryResult() :
    queryStatus( eQueryStatus::esNotExecuted )
 {
 
 }
 
+/**
+ * CTOR
+ */
 QueryResult::QueryResult( const eQueryStatus &eqs ) :
    queryStatus( eqs )
 {
 
 }
 
+/**
+ * CTOR
+ */
 QueryResult::QueryResult( const eQueryStatus &eqs, const std::string &s_data ) :
    queryStatus( eqs ),
    sData( s_data )
