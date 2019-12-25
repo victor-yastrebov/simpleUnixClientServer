@@ -992,7 +992,8 @@ QueryResult DataBase::execute_list(Statement* statement, Table* table) {
   std::string s = ss.str();
   if( ! s.empty() )
   {
-     s.pop_back();
+     // s.pop_back();
+     s.resize( s.size() - 1 );
   }
 
   QueryResult query_result {eQueryStatus::esSuccss, ss.str()};

@@ -14,13 +14,16 @@
 #include<vector>
 
 // C++17 has built-in type "byte"
-using BYTE = unsigned char;
-using DataConstIterator = std::vector<BYTE>::const_iterator;
+// using BYTE = unsigned char;
+// using DataConstIterator = std::vector<BYTE>::const_iterator;
+
+typedef unsigned char BYTE;
+typedef std::vector<BYTE>::const_iterator DataConstIterator;
 
 class AppProtocol
 {
 public:
-                       AppProtocol() = default;
+                       AppProtocol();
                       ~AppProtocol() = default;
                        AppProtocol( const AppProtocol& ) = delete;
                        AppProtocol& operator=( const AppProtocol& ) = delete;
@@ -33,5 +36,5 @@ private:
            std::vector<BYTE>   genLenField( const int len ) const;
 
    mutable DataConstIterator   itData;
-                   const int   nHeaderSize = 4;
+                   const int   nHeaderSize;
 };

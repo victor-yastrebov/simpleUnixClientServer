@@ -15,6 +15,15 @@
 #include"AppProtocol.h"
 
 /**
+ * CTOR
+ */
+AppProtocol::AppProtocol() :
+   nHeaderSize( 4 )
+{
+
+}
+
+/**
  * Encode query into bytestream for furher transmitting
  */
 std::vector<BYTE> AppProtocol::encodeMsg( const std::string &s_msg ) const

@@ -28,7 +28,8 @@ std::string getQuery( const int argc, const char *const argv[] )
    std::string s_query = ss.str();
    if( argc > 1 )
    {
-      s_query.pop_back();
+      // s_query.pop_back();
+      s_query.resize( s_query.size() - 1 );
    }
 
    return s_query;
