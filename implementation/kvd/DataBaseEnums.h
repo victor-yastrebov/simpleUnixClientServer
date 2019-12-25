@@ -28,7 +28,8 @@ enum class ePrepareResult
 {
   prSuccess,
   prNegativeId,
-  prStringTooLong,
+  prInvalidKeyLength,
+  prValueStringTooLong,
   prSyntaxError,
   prUnrecognisedStatement
 };

@@ -49,6 +49,15 @@ void testMe(std::string s_query)
 
 int main( int argc, char *argv[] )
 {
+/*
+   AppProtocol ap;
+   bool ok;
+   auto ret = ap.decodeMsg( ap.encodeMsg( "put keystring1 valuestring1" ), ok );
+
+   std::cout << ret << std::endl;
+
+   return 1;
+*/
    const std::string s_query = getQuery( argc, argv );
 
    // testMe( s_query );

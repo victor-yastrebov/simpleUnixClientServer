@@ -260,12 +260,12 @@ void DataBase::serializeRow(Row* source, void* destination)
 std::string DataBase::getKey( Cursor* p_cursor )
 {
    std::string str;
-   str.resize( BTree::nKeyStrSize );
+   str.resize( dbs::nEtalonKeySize + 1 );
 
    void *p_key = cursorKey( p_cursor );
 
-   memcpy( (void*)str.data(), p_key, BTree::nKeyStrSize );
-   str.at(dbs::nEtalonKeySize) = '\0';
+   memcpy( (void*)str.data(), p_key, dbs::nEtalonKeySize );
+   str.at( dbs::nEtalonKeySize ) = '\0';
 
    return str;
 }
@@ -578,7 +578,7 @@ void DataBase::pagerFlush(Pager* pager, uint32_t page_num)
   off_t offset = lseek(pager->file_descriptor, page_num * BTree::nPageSize, SEEK_SET);
 
   if (offset == -1) {
-    sysLogger.LogToSyslog("Error seeking: %d\n", errno);
+    sysLogger.LogToSyslog("Error seeking. Last error code: ", errno);
     exit(EXIT_FAILURE);
   }
 
@@ -664,12 +664,12 @@ ePrepareResult DataBase::prepareInsert(InputBuffer* input_buffer, Statement* sta
   const size_t key_len = strlen( key );
   if( key_len != dbs::nEtalonKeySize )
   {
-     return ePrepareResult::prStringTooLong;
+     return ePrepareResult::prInvalidKeyLength;
   }
 
   if (strlen(value) > dbs::nValueMaxSize)
   {
-     return ePrepareResult::prStringTooLong;
+     return ePrepareResult::prValueStringTooLong;
   }
 
   strcpy(statement->row_to_insert.key, key);
@@ -678,13 +678,14 @@ ePrepareResult DataBase::prepareInsert(InputBuffer* input_buffer, Statement* sta
   return ePrepareResult::prSuccess;
 }
 
-ePrepareResult DataBase::prepareStatement(InputBuffer* input_buffer,
-                                Statement* statement)
+ePrepareResult DataBase::prepareStatement( InputBuffer* input_buffer,
+   Statement* statement )
 {
-  if (strncmp(input_buffer->buffer, "put", 3) == 0) {
-    return prepareInsert(input_buffer, statement);
+  if( strncmp( input_buffer->buffer, "PUT", 3 ) == 0 )
+  {
+     return prepareInsert( input_buffer, statement );
   }
-  if (strcmp(input_buffer->buffer, "list") == 0)
+  if( strcmp( input_buffer->buffer, "LIST" ) == 0 )
   {
     statement->eType = eStatementType::stList;
     return ePrepareResult::prSuccess;;
@@ -1086,8 +1087,12 @@ QueryResult DataBase::executeQuery( const std::string &s_query )
    {
      case ePrepareResult::prSuccess:
        break;
-     case ePrepareResult::prStringTooLong:
-       sysLogger.LogToSyslog("String is too long");
+     case ePrepareResult::prInvalidKeyLength:
+       sysLogger.LogToSyslog( "Input key length is invalid" );
+       query_result.queryStatus = eQueryStatus::esInvalidCmd;
+       return query_result;
+     case ePrepareResult::prValueStringTooLong:
+       sysLogger.LogToSyslog( "Value string is too long" );
        query_result.queryStatus = eQueryStatus::esInvalidCmd;
        return query_result;
      case ePrepareResult::prSyntaxError:

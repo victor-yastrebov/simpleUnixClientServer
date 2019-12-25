@@ -44,7 +44,7 @@ struct Row
 
 struct Statement
 {
-   enum class eStatementType eType;
+   enum eStatementType eType;
    Row row_to_insert;  // only used by insert statement
 };
 

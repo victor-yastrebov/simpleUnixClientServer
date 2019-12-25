@@ -14,6 +14,8 @@
 
 #include<unistd.h>
 #include<iostream>
+#include<iomanip>
+#include<sstream>
 
 #include"UDS.h"
 #include"UDSClient.h"
@@ -103,6 +105,17 @@ int UDSClient::Query( const std::string &s_query ) const
    bool status_ok = false;
    const std::string s_answer = app_protocol.decodeMsg(
       std::vector<BYTE>( buf, buf + bytes_read ), status_ok );
+
+   std::stringstream ss;
+   ss << "msg is " << std::hex;
+   for ( int i=0; i<bytes_read; ++i )
+   {
+      ss << "0x" << std::uppercase << std::hex << std::setfill( '0' ) << std::setw( 2 )
+               << static_cast<int>( buf[i] ) << " ";
+   }
+   ss << std::dec;
+
+   // std::cout << ss.str() << std::endl;
 
    if( ! status_ok )
    {

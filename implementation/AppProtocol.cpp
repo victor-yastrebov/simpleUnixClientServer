@@ -69,15 +69,13 @@ std::string AppProtocol::decodeMsg(
 
    itData = v_packet.begin();
 
-   const int packet_size = getFieldValueOfFourBytesLen();
-   if( v_packet.size() < packet_size )
+   const int n_packet_size = getFieldValueOfFourBytesLen();
+   if( v_packet.size() < n_packet_size )
    {
       // full packet is not received
       return std::string();
    }
 
-   // get msg
-   const int n_packet_size = getFieldValueOfFourBytesLen();
    std::vector<BYTE>::const_iterator it_msg_end = v_packet.end();
    const std::string s_msg( itData, it_msg_end );
 
@@ -98,7 +96,7 @@ std::string AppProtocol::decodeMsg(
  */
 std::vector<BYTE> AppProtocol::genLenField( const int n_msg_len ) const
 {
-   std::vector<BYTE> v_len( sizeof( n_msg_len ) );
+   std::vector<BYTE> v_len;
    v_len.push_back( getByteInPosition( n_msg_len, 3) );
    v_len.push_back( getByteInPosition( n_msg_len, 2) );
    v_len.push_back( getByteInPosition( n_msg_len, 1) );

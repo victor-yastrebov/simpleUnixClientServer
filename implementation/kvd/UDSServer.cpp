@@ -129,8 +129,6 @@ int UDSServer::processConnectedSockets( const std::string& s_path_to_db )
          sysLogger.LogToSyslog( ss.str().c_str() );
 
          QueryResult qr = db.executeQuery( s_query );
-         sysLogger.LogToSyslog( "Query result is: ", qr.sData );
-
          if( qr.sData.empty() )
          {
             qr.sData = "Empty response";
