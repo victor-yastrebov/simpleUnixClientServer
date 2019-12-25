@@ -28,7 +28,7 @@ public:
                 ~DataBase();
                  DataBase( const DataBase& ) = delete;
                  DataBase& operator=( const DataBase& ) = delete;
-   QueryResult   ExecuteQuery( const std::string &s );
+   QueryResult   executeQuery( const std::string &s );
 
 private:
            eNodeType   getNodeType(void* node);
@@ -65,7 +65,6 @@ private:
                Pager*  pagerOpen(const char* filename);
                 void   dbOpen();
          InputBuffer*  newInputBuffer();
-                void   printPrompt();
                 void   readInput(InputBuffer* input_buffer, const std::string &s_query);
                 void   closeInputBuffer(InputBuffer* input_buffer);
                 void   pagerFlush(Pager* pager, uint32_t page_num);
@@ -83,7 +82,6 @@ private:
          QueryResult   executeList(Statement* statement, Table* table);
          QueryResult   executeStatement(Statement* statement, Table* table);
                  int   compareKeys( char *key1, char* key2 ) const;
-  
                 char*  leafNodeKey(void* node, uint32_t cell_num);
                 void*  leafNodeCell(void* node, uint32_t cell_num);
                 void*  leafNodeValue(void* node, uint32_t cell_num);

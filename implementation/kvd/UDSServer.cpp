@@ -128,7 +128,7 @@ int UDSServer::processConnectedSockets( const std::string& s_path_to_db )
          ss << "Receive query: " << s_query << std::endl;
          sysLogger.LogToSyslog( ss.str().c_str() );
 
-         QueryResult qr = db.ExecuteQuery( s_query );
+         QueryResult qr = db.executeQuery( s_query );
          sysLogger.LogToSyslog( "Query result is: ", qr.sData );
 
          if( qr.sData.empty() )
