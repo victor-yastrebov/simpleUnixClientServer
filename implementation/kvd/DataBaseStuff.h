@@ -14,12 +14,16 @@
 
 #include"DataBaseEnums.h"
 
-#define TABLE_MAX_PAGES 100
-#define COLUMN_USERNAME_SIZE 32
-#define COLUMN_EMAIL_SIZE 255
+namespace dbs
+{
+   const int nTableMaxPages = 100;
+   const int nColumnUserNameSize = 32;
+   const int nColumnEmailSize = 255;
+   const int nKeyMaxSize = 255;
+   const int nValueMaxSize = 255;
 
-#define KEY_MAX_SIZE 255
-#define VALUE_MAX_SIZE 255
+   const size_t nEtalonKeySize = 10;
+}
 
 struct InputBuffer
 {
@@ -31,11 +35,11 @@ struct InputBuffer
 struct Row
 {
    uint32_t id;
-   char username[COLUMN_USERNAME_SIZE + 1];
-   char email[COLUMN_EMAIL_SIZE + 1];
+   char username[dbs::nColumnUserNameSize + 1];
+   char email[dbs::nColumnEmailSize + 1];
 
-   char key[KEY_MAX_SIZE];
-   char value[VALUE_MAX_SIZE];
+   char key[dbs::nKeyMaxSize];
+   char value[dbs::nValueMaxSize];
 };
 
 struct Statement
@@ -49,7 +53,7 @@ struct Pager
    int file_descriptor;
    uint32_t file_length;
    uint32_t num_pages;
-   void* pages[TABLE_MAX_PAGES];
+   void* pages[dbs::nTableMaxPages];
 };
 
 struct Table

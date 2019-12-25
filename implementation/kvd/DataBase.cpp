@@ -6,7 +6,7 @@
  *    Class is responsible for processing incoming connections from clients
   * </pre>
  *
- * @class UDSServer
+ * @class DataBase
  */
 
 #include <errno.h>
@@ -37,74 +37,69 @@ DataBase::~DataBase()
    // sysLogger.LogToSyslog( "DataBase DTOR DONE12" );
 }
 
-void DataBase::print_row(Row* row)
-{
-   sysLogger.LogToSyslog( "(", row->key, ", ", row->value, ")" );
-}
-
-eNodeType DataBase::get_node_type(void* node) {
+eNodeType DataBase::getNodeType(void* node) {
   uint8_t value = *((uint8_t*)(node + BTree::nNodeTypeOffset));
   return (eNodeType)value;
 }
 
-void DataBase::set_node_type(void* node, eNodeType type) {
+void DataBase::setNodeType(void* node, eNodeType type) {
   uint8_t value = type;
   *((uint8_t*)(node + BTree::nNodeTypeOffset)) = value;
 }
 
-bool DataBase::is_node_root(void* node) {
+bool DataBase::isNodeRoot(void* node) {
   uint8_t value = *((uint8_t*)(node + BTree::nIsRootOffset));
   return (bool)value;
 }
 
-void DataBase::set_node_root(void* node, bool is_root) {
+void DataBase::setNodeRoot(void* node, bool is_root) {
   uint8_t value = is_root;
   *((uint8_t*)(node + BTree::nIsRootOffset)) = value;
 }
 
-uint32_t* DataBase::node_parent(void* node)
+uint32_t* DataBase::nodeParent(void* node)
 {
    return static_cast<uint32_t*>( node ) + BTree::nParentPointerOffset;
 }
 
-uint32_t* DataBase::internal_node_num_keys(void* node) {
+uint32_t* DataBase::internalNodeNumKeys(void* node) {
   return static_cast<uint32_t*>( node ) + BTree::nInternalNodeNumKeysOffset;
 }
 
-uint32_t* DataBase::internal_node_right_child(void* node) {
+uint32_t* DataBase::internalNodeRightChild(void* node) {
   return static_cast<uint32_t*>( node ) + BTree::nInternalNodeRightChildOffset;
 }
 
-uint32_t* DataBase::internal_node_cell(void* node, uint32_t cell_num) {
+uint32_t* DataBase::internalNodeCell(void* node, uint32_t cell_num) {
   return static_cast<uint32_t*>( node ) + BTree::nInternalNodeHeaderSize + cell_num * BTree::nInternalNodeCellSize;
 }
 
-uint32_t* DataBase::internal_node_child(void* node, uint32_t child_num) {
-  uint32_t num_keys = *internal_node_num_keys(node);
+uint32_t* DataBase::internalNodeChild(void* node, uint32_t child_num) {
+  uint32_t num_keys = *internalNodeNumKeys(node);
   if (child_num > num_keys) {
     sysLogger.LogToSyslog( "Tried to access child_num %d > num_keys %d\n", child_num, num_keys );
     exit(EXIT_FAILURE);
   } else if (child_num == num_keys) {
-    return internal_node_right_child(node);
+    return internalNodeRightChild(node);
   } else {
-    return internal_node_cell(node, child_num);
+    return internalNodeCell(node, child_num);
   }
 }
 
-uint32_t* DataBase::internal_node_key(void* node, uint32_t key_num) {
-  return (uint32_t*)internal_node_cell(node, key_num) + BTree::nInternalNodeChildSize;
+uint32_t* DataBase::internalNodeKey(void* node, uint32_t key_num) {
+  return (uint32_t*)internalNodeCell(node, key_num) + BTree::nInternalNodeChildSize;
 }
 
-uint32_t* DataBase::leaf_node_num_cells(void* node) {
+uint32_t* DataBase::leafNodeNumCells(void* node) {
   uint32_t* val = static_cast<uint32_t*>( node ) + BTree::nLeafNodeNumCellsOffset;
   return static_cast<uint32_t*>( node ) + BTree::nLeafNodeNumCellsOffset;
 }
 
-uint32_t* DataBase::leaf_node_next_leaf(void* node) {
+uint32_t* DataBase::leafNodeNextLeaf(void* node) {
   return static_cast<uint32_t*>( node ) + BTree::nLeafNodeNextLeafOffset;
 }
 
-void* DataBase::leaf_node_cell(void* node, uint32_t cell_num) {
+void* DataBase::leafNodeCellId(void* node, uint32_t cell_num) {
   return static_cast<uint32_t*>( node ) + BTree::nLeafNodeHeaderSize + cell_num * BTree::nLeafNodeCellSize;
 }
 
@@ -112,8 +107,8 @@ void* DataBase::leaf_node_cell(void* node, uint32_t cell_num) {
  * Получить указатель на область памяти cell (на page их может быть несколько),
  *  в котором хранится key для навигации по BTree
 */
-uint32_t* DataBase::leaf_node_key(void* node, uint32_t cell_num) {
-  return static_cast<uint32_t*>( leaf_node_cell(node, cell_num) );
+uint32_t* DataBase::leafNodeKeyId(void* node, uint32_t cell_num) {
+  return static_cast<uint32_t*>( leafNodeCellId(node, cell_num) );
 }
 
 // получить указатель на начало памяти в page, где хранится cell с индексом cell_num
@@ -133,23 +128,23 @@ void* DataBase::leafNodeValue(void* node, uint32_t cell_num)
   return leafNodeCell(node, cell_num) + BTree::nLeafNodeStrKeySize;
 }
 
-void* DataBase::leaf_node_value(void* node, uint32_t cell_num)
+void* DataBase::leafNodeValueId(void* node, uint32_t cell_num)
 {
-  return leaf_node_cell(node, cell_num) + BTree::nLeafNodeKeySize;
+  return leafNodeCellId(node, cell_num) + BTree::nLeafNodeKeySize;
 }
 
-uint32_t DataBase::get_node_max_key(void* node)
+uint32_t DataBase::getNodeMaxKey(void* node)
 {
-  switch (get_node_type(node))
+  switch (getNodeType(node))
   {
     case eNodeType::ntInternal:
-      return *internal_node_key(node, *internal_node_num_keys(node) - 1);
+      return *internalNodeKey(node, *internalNodeNumKeys(node) - 1);
     case eNodeType::ntLeaf:
-      return *leaf_node_key(node, *leaf_node_num_cells(node) - 1);
+      return *leafNodeKeyId(node, *leafNodeNumCells(node) - 1);
   }
 }
 
-void DataBase::print_constants() {
+void DataBase::printConstants() {
   sysLogger.LogToSyslog("nRowSize: ", BTree::nRowSize);
   sysLogger.LogToSyslog("nCommonNodeHeaderSize: ", BTree::nCommonNodeHeaderSize);
   sysLogger.LogToSyslog("nLeafNodeHeaderSize: ", BTree::nLeafNodeHeaderSize);
@@ -158,12 +153,12 @@ void DataBase::print_constants() {
   sysLogger.LogToSyslog("nLeafNodeMaxCells: ", BTree::nLeafNodeMaxCells);
 }
 
-void* DataBase::get_page( Pager* pager, uint32_t page_num )
+void* DataBase::getPage( Pager* pager, uint32_t page_num )
 {
-  if( page_num > TABLE_MAX_PAGES )
+  if( page_num > dbs::nTableMaxPages )
   {
    sysLogger.LogToSyslog( "Tried to fetch page number out of bounds. ",
-      page_num, " > ", TABLE_MAX_PAGES );
+      page_num, " > ", dbs::nTableMaxPages );
    exit(EXIT_FAILURE);
   }
 
@@ -205,13 +200,13 @@ void DataBase::indent(uint32_t level) {
   }*/
 }
 
-void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_level) {
-  void* node = get_page(pager, page_num);
+void DataBase::printTree(Pager* pager, uint32_t page_num, uint32_t indentation_level) {
+  void* node = getPage(pager, page_num);
   uint32_t num_keys, child;
 
-  switch (get_node_type(node)) {
+  switch (getNodeType(node)) {
     case (eNodeType::ntLeaf):
-      num_keys = *leaf_node_num_cells(node);
+      num_keys = *leafNodeNumCells(node);
       indent(indentation_level);
       sysLogger.LogToSyslog("- leaf (size", num_keys, ")");
       for (uint32_t i = 0; i < num_keys; i++)
@@ -221,23 +216,23 @@ void DataBase::print_tree(Pager* pager, uint32_t page_num, uint32_t indentation_
       }
       break;
     case (eNodeType::ntInternal):
-      num_keys = *internal_node_num_keys(node);
+      num_keys = *internalNodeNumKeys(node);
       indent(indentation_level);
       sysLogger.LogToSyslog("- internal (size ", num_keys, ")");
       for (uint32_t i = 0; i < num_keys; i++) {
-        child = *internal_node_child(node, i);
-        print_tree(pager, child, indentation_level + 1);
+        child = *internalNodeChild(node, i);
+        printTree(pager, child, indentation_level + 1);
 
         indent(indentation_level + 1);
-        sysLogger.LogToSyslog("- key ", *internal_node_key(node, i));
+        sysLogger.LogToSyslog("- key ", *internalNodeKey(node, i));
       }
-      child = *internal_node_right_child(node);
-      print_tree(pager, child, indentation_level + 1);
+      child = *internalNodeRightChild(node);
+      printTree(pager, child, indentation_level + 1);
       break;
   }
 }
 
-void DataBase::serialize_row(Row* source, void* destination) {
+void DataBase::serializeRow(Row* source, void* destination) {
   memcpy(destination + BTree::nValueStrOffset, &(source->value), BTree::nValueStrSize );
   // memcpy(destination + USERNAME_OFFSET, &(source->username), BTree::nUserNameSize);
   // memcpy(destination + EMAIL_OFFSET, &(source->email), BTree::nEmailSize);
@@ -248,35 +243,35 @@ std::string DataBase::getKey( Cursor* p_cursor )
    std::string str;
    str.resize( BTree::nKeyStrSize );
 
-   void *p_key = cursor_key( p_cursor );
+   void *p_key = cursorKey( p_cursor );
 
    memcpy( (void*)str.data(), p_key, BTree::nKeyStrSize );
-   str.at(etalonKeySize) = '\0';
+   str.at(dbs::nEtalonKeySize) = '\0';
 
    return str;
 }
 
-void DataBase::deserialize_row( void *key, void* source, Row* destination )
+void DataBase::deserializeRow( void *key, void* source, Row* destination )
 {
   memcpy( &( destination->value ), source + BTree::nValueStrOffset, BTree::nValueStrSize );
   memcpy( &( destination->key ), key, BTree::nKeyStrSize );
-  destination->key[etalonKeySize] = '\0';
+  destination->key[dbs::nEtalonKeySize] = '\0';
   // memcpy(&(destination->id), source + ID_OFFSET, ID_SIZE);
   // memcpy(&(destination->username), source + USERNAME_OFFSET, USERNAME_SIZE);
   // memcpy(&(destination->email), source + EMAIL_OFFSET, BTree::nEmailSize);
 }
 
-void DataBase::initialize_leaf_node(void* node) {
-  set_node_type(node, eNodeType::ntLeaf );
-  set_node_root(node, false);
-  *leaf_node_num_cells(node) = 0;
-  *leaf_node_next_leaf(node) = 0;  // 0 represents no sibling
+void DataBase::initializeLeafNode(void* node) {
+  setNodeType(node, eNodeType::ntLeaf );
+  setNodeRoot(node, false);
+  *leafNodeNumCells(node) = 0;
+  *leafNodeNextLeaf(node) = 0;  // 0 represents no sibling
 }
 
-void DataBase::initialize_internal_node(void* node) {
-  set_node_type(node, eNodeType::ntInternal);
-  set_node_root(node, false);
-  *internal_node_num_keys(node) = 0;
+void DataBase::initializeInternalNode(void* node) {
+  setNodeType(node, eNodeType::ntInternal);
+  setNodeRoot(node, false);
+  *internalNodeNumKeys(node) = 0;
 }
 
 /**
@@ -286,9 +281,9 @@ void DataBase::initialize_internal_node(void* node) {
  * - the position of another key that we’ll need to move if we want to insert the new key OR
  * - the position one past the last key
  */
-Cursor* DataBase::leaf_node_find(Table* table, uint32_t page_num, char* key) {
-  void* node = get_page(table->pager, page_num);
-  uint32_t num_cells = *leaf_node_num_cells(node);
+Cursor* DataBase::leafNodeFind(Table* table, uint32_t page_num, char* key) {
+  void* node = getPage(table->pager, page_num);
+  uint32_t num_cells = *leafNodeNumCells(node);
 
   Cursor* cursor = (Cursor*)malloc(sizeof(Cursor));
   cursor->table = table;
@@ -338,13 +333,13 @@ int DataBase::compareKeys( char *key1, char* key2 ) const
    return s1.compare( s2 );
 }
 
-uint32_t DataBase::internal_node_find_child(void* node, uint32_t key) {
+uint32_t DataBase::internalNodeFindChild(void* node, uint32_t key) {
   /*
   Return the index of the child which should contain
   the given key.
   */
 
-  uint32_t num_keys = *internal_node_num_keys(node);
+  uint32_t num_keys = *internalNodeNumKeys(node);
 
   /* Binary search */
   uint32_t min_index = 0;
@@ -352,7 +347,7 @@ uint32_t DataBase::internal_node_find_child(void* node, uint32_t key) {
 
   while (min_index != max_index) {
     uint32_t index = (min_index + max_index) / 2;
-    uint32_t key_to_right = *internal_node_key(node, index);
+    uint32_t key_to_right = *internalNodeKey(node, index);
     if (key_to_right >= key) {
       max_index = index;
     } else {
@@ -363,17 +358,17 @@ uint32_t DataBase::internal_node_find_child(void* node, uint32_t key) {
   return min_index;
 }
 
-Cursor* DataBase::internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
-  void* node = get_page(table->pager, page_num);
+Cursor* DataBase::internalNodeFind(Table* table, uint32_t page_num, uint32_t key) {
+  void* node = getPage(table->pager, page_num);
 
-  uint32_t child_index = internal_node_find_child(node, key);
-  uint32_t child_num = *internal_node_child(node, child_index);
-  void* child = get_page(table->pager, child_num);
-  switch (get_node_type(child)) {
+  uint32_t child_index = internalNodeFindChild(node, key);
+  uint32_t child_num = *internalNodeChild(node, child_index);
+  void* child = getPage(table->pager, child_num);
+  switch (getNodeType(child)) {
     case eNodeType::ntLeaf:
-      // return leaf_node_find(table, child_num, key);
+      // return leafNodeFind(table, child_num, key);
     case eNodeType::ntInternal:
-      return internal_node_find(table, child_num, key);
+      return internalNodeFind(table, child_num, key);
   }
 }
 
@@ -382,18 +377,18 @@ Return the position of the given key.for BTree, not key in the row
 If the key is not present, return the position
 where it should be inserted
 */
-Cursor* DataBase::table_find(Table* table, char* key) {
+Cursor* DataBase::tableFind(Table* table, char* key) {
   uint32_t root_page_num = table->root_page_num;
-  void* root_node = get_page(table->pager, root_page_num);
+  void* root_node = getPage(table->pager, root_page_num);
 
-  if (get_node_type(root_node) == eNodeType::ntLeaf )
+  if (getNodeType(root_node) == eNodeType::ntLeaf )
   {
      // найди в таблице, начиная с ее первой страницы такой вот ключ
-     return leaf_node_find(table, root_page_num, key);
+     return leafNodeFind(table, root_page_num, key);
   } else {
     sysLogger.LogToSyslog( "!!!!!!! INTERNAL NODE FIND IS NOT IMPLEMENTED !!!");
     return NULL;
-    // return internal_node_find(table, root_page_num, key);
+    // return internalNodeFind(table, root_page_num, key);
   }
 }
 
@@ -408,38 +403,38 @@ Cursor* DataBase::createCursorForFirstCell( Table* table ) const
    return cursor;
 }
 
-Cursor* DataBase::table_start(Table* table) {
+Cursor* DataBase::tableStart(Table* table) {
    // надо установить курсор на самую первую строку
    Cursor* cursor = createCursorForFirstCell( table );
 
-   void* node = get_page( table->pager, cursor->page_num );
-   uint32_t num_cells = *leaf_node_num_cells( node );
+   void* node = getPage( table->pager, cursor->page_num );
+   uint32_t num_cells = *leafNodeNumCells( node );
    cursor->end_of_table = ( num_cells == 0 );
 
    return cursor;
 }
 
-void* DataBase::cursor_value(Cursor* cursor) {
+void* DataBase::cursorValue(Cursor* cursor) {
   uint32_t page_num = cursor->page_num;
-  void* page = get_page(cursor->table->pager, page_num);
+  void* page = getPage(cursor->table->pager, page_num);
   return leafNodeValue(page, cursor->cell_num);
 }
 
-void* DataBase::cursor_key(Cursor* cursor) {
+void* DataBase::cursorKey(Cursor* cursor) {
    uint32_t page_num = cursor->page_num;
-   void* page = get_page(cursor->table->pager, page_num);
+   void* page = getPage(cursor->table->pager, page_num);
    return leafNodeKey(page, cursor->cell_num);
 }
 
 
-void DataBase::cursor_advance(Cursor* cursor) {
+void DataBase::cursorAdvance(Cursor* cursor) {
   uint32_t page_num = cursor->page_num;
-  void* node = get_page(cursor->table->pager, page_num);
+  void* node = getPage(cursor->table->pager, page_num);
 
   cursor->cell_num += 1;
-  if (cursor->cell_num >= (*leaf_node_num_cells(node))) {
+  if (cursor->cell_num >= (*leafNodeNumCells(node))) {
     /* Advance to next leaf node */
-    uint32_t next_page_num = *leaf_node_next_leaf(node);
+    uint32_t next_page_num = *leafNodeNextLeaf(node);
     if (next_page_num == 0) {
       /* This was rightmost leaf */
       cursor->end_of_table = true;
@@ -450,7 +445,7 @@ void DataBase::cursor_advance(Cursor* cursor) {
   }
 }
 
-Pager* DataBase::pager_open(const char* filename) {
+Pager* DataBase::pagerOpen(const char* filename) {
   int fd = open(filename,
                 O_RDWR |      // Read/Write mode
                     O_CREAT,  // Create file if it does not exist
@@ -477,7 +472,7 @@ Pager* DataBase::pager_open(const char* filename) {
     exit(EXIT_FAILURE);
   }
 
-  for( uint32_t i = 0; i < TABLE_MAX_PAGES; i++ )
+  for( uint32_t i = 0; i < dbs::nTableMaxPages; i++ )
   {
     pager->pages[i] = NULL;
   }
@@ -485,9 +480,9 @@ Pager* DataBase::pager_open(const char* filename) {
   return pager;
 }
 
-void DataBase::db_open()
+void DataBase::dbOpen()
 {
-  Pager* pager = pager_open( sDbFilePath.c_str() );
+  Pager* pager = pagerOpen( sDbFilePath.c_str() );
 
   table = (Table *)malloc(sizeof(Table));
   table->pager = pager;
@@ -496,13 +491,13 @@ void DataBase::db_open()
   if (pager->num_pages == 0)
   {
     // New database file. Initialize page 0 as leaf node.
-    void* root_node = get_page(pager, 0);
-    initialize_leaf_node(root_node);
-    set_node_root(root_node, true);
+    void* root_node = getPage(pager, 0);
+    initializeLeafNode(root_node);
+    setNodeRoot(root_node, true);
   }
 }
 
-InputBuffer* DataBase::new_input_buffer() {
+InputBuffer* DataBase::newInputBuffer() {
   InputBuffer* input_buffer = (InputBuffer*)malloc(sizeof(InputBuffer));
   input_buffer->buffer = NULL;
   input_buffer->buffer_length = 0;
@@ -511,9 +506,9 @@ InputBuffer* DataBase::new_input_buffer() {
   return input_buffer;
 }
 
-void DataBase::print_prompt() { sysLogger.LogToSyslog("db > "); }
+void DataBase::printPrompt() { sysLogger.LogToSyslog("db > "); }
 
-void DataBase::read_input(InputBuffer* input_buffer, const std::string &s_query ) {
+void DataBase::readInput(InputBuffer* input_buffer, const std::string &s_query ) {
   sCurQuery = s_query;
 
   // ssize_t bytes_read =
@@ -535,12 +530,12 @@ void DataBase::read_input(InputBuffer* input_buffer, const std::string &s_query 
   // input_buffer->buffer[bytes_read - 1] = 0;
 }
 
-void DataBase::close_input_buffer(InputBuffer* input_buffer) {
+void DataBase::closeInputBuffer(InputBuffer* input_buffer) {
   // free(input_buffer->buffer);
   free(input_buffer);
 }
 
-void DataBase::pager_flush(Pager* pager, uint32_t page_num) {
+void DataBase::pagerFlush(Pager* pager, uint32_t page_num) {
   if (pager->pages[page_num] == NULL)
   {
     sysLogger.LogToSyslog("Tried to flush null page");
@@ -565,7 +560,7 @@ void DataBase::pager_flush(Pager* pager, uint32_t page_num) {
   }
 }
 
-void DataBase::db_close() {
+void DataBase::dbClose() {
   Pager* pager = table->pager;
 
   // flushes the page cache to disk
@@ -573,7 +568,7 @@ void DataBase::db_close() {
     if (pager->pages[i] == NULL) {
       continue;
     }
-    pager_flush(pager, i);
+    pagerFlush(pager, i);
     free(pager->pages[i]);
     pager->pages[i] = NULL;
   }
@@ -589,7 +584,7 @@ void DataBase::db_close() {
   }
 
   // frees the memory for the Pager and Table data structures
-  for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
+  for (uint32_t i = 0; i < dbs::nTableMaxPages; i++) {
     void* page = pager->pages[i];
     if (page) {
       free(page);
@@ -600,25 +595,25 @@ void DataBase::db_close() {
   free(table);
 }
 
-eMetaCmdResult DataBase::do_meta_command(InputBuffer* input_buffer, Table* table) {
+eMetaCmdResult DataBase::doMetaCommand(InputBuffer* input_buffer, Table* table) {
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
-    close_input_buffer(input_buffer);
-    db_close();
+    closeInputBuffer(input_buffer);
+    dbClose();
     return eMetaCmdResult::mcrSuccess;
   } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
     sysLogger.LogToSyslog( "Tree:" );
-    print_tree(table->pager, 0, 0);
+    printTree(table->pager, 0, 0);
     return eMetaCmdResult::mcrSuccess;
   } else if (strcmp(input_buffer->buffer, ".constants") == 0) {
     sysLogger.LogToSyslog("Constants:\n");
-    print_constants();
+    printConstants();
     return eMetaCmdResult::mcrSuccess;
   } else {
     return eMetaCmdResult::mcrUnrecognisedCmd;
   }
 }
 
-ePrepareResult DataBase::prepare_insert(InputBuffer* input_buffer, Statement* statement) {
+ePrepareResult DataBase::prepareInsert(InputBuffer* input_buffer, Statement* statement) {
   statement->eType = eStatementType::stPut;
 
   char* keyword = strtok(input_buffer->buffer, " ");
@@ -632,12 +627,12 @@ ePrepareResult DataBase::prepare_insert(InputBuffer* input_buffer, Statement* st
   }
 
   const size_t key_len = strlen( key );
-  if( key_len != etalonKeySize )
+  if( key_len != dbs::nEtalonKeySize )
   {
      return ePrepareResult::prStringTooLong;
   }
 
-  if (strlen(value) > VALUE_MAX_SIZE)
+  if (strlen(value) > dbs::nValueMaxSize)
   {
      return ePrepareResult::prStringTooLong;
   }
@@ -648,10 +643,10 @@ ePrepareResult DataBase::prepare_insert(InputBuffer* input_buffer, Statement* st
   return ePrepareResult::prSuccess;
 }
 
-ePrepareResult DataBase::prepare_statement(InputBuffer* input_buffer,
+ePrepareResult DataBase::prepareStatement(InputBuffer* input_buffer,
                                 Statement* statement) {
   if (strncmp(input_buffer->buffer, "put", 3) == 0) {
-    return prepare_insert(input_buffer, statement);
+    return prepareInsert(input_buffer, statement);
   }
   if (strcmp(input_buffer->buffer, "list") == 0)
   {
@@ -666,9 +661,9 @@ ePrepareResult DataBase::prepare_statement(InputBuffer* input_buffer,
 Until we start recycling free pages, new pages will always
 go onto the end of the database file
 */
-uint32_t DataBase::get_unused_page_num(Pager* pager) { return pager->num_pages; }
+uint32_t DataBase::getUnusedPageNum(Pager* pager) { return pager->num_pages; }
 
-void DataBase::create_new_root(Table* table, uint32_t right_child_page_num)
+void DataBase::createNewRoot(Table* table, uint32_t right_child_page_num)
 {
   /*
   Handle splitting the root.
@@ -678,70 +673,70 @@ void DataBase::create_new_root(Table* table, uint32_t right_child_page_num)
   New root node points to two children.
   */
 
-  void* root = get_page(table->pager, table->root_page_num);
-  void* right_child = get_page(table->pager, right_child_page_num);
-  uint32_t left_child_page_num = get_unused_page_num(table->pager);
-  void* left_child = get_page(table->pager, left_child_page_num);
+  void* root = getPage(table->pager, table->root_page_num);
+  void* right_child = getPage(table->pager, right_child_page_num);
+  uint32_t left_child_page_num = getUnusedPageNum(table->pager);
+  void* left_child = getPage(table->pager, left_child_page_num);
 
   /* Left child has data copied from old root */
   memcpy(left_child, root, BTree::nPageSize);
-  set_node_root(left_child, false);
+  setNodeRoot(left_child, false);
 
   /* Root node is a new internal node with one key and two children */
-  initialize_internal_node(root);
-  set_node_root(root, true);
-  *internal_node_num_keys(root) = 1;
-  *internal_node_child(root, 0) = left_child_page_num;
-  uint32_t left_child_max_key = get_node_max_key(left_child);
-  *internal_node_key(root, 0) = left_child_max_key;
-  *internal_node_right_child(root) = right_child_page_num;
-  *node_parent(left_child) = table->root_page_num;
-  *node_parent(right_child) = table->root_page_num;
+  initializeInternalNode(root);
+  setNodeRoot(root, true);
+  *internalNodeNumKeys(root) = 1;
+  *internalNodeChild(root, 0) = left_child_page_num;
+  uint32_t left_child_max_key = getNodeMaxKey(left_child);
+  *internalNodeKey(root, 0) = left_child_max_key;
+  *internalNodeRightChild(root) = right_child_page_num;
+  *nodeParent(left_child) = table->root_page_num;
+  *nodeParent(right_child) = table->root_page_num;
 }
 
-void DataBase::internal_node_insert(Table* table, uint32_t parent_page_num,
+void DataBase::internalNodeInsert(Table* table, uint32_t parent_page_num,
                           uint32_t child_page_num) {
   /*
   Add a new child/key pair to parent that corresponds to child
   */
 
-  void* parent = get_page(table->pager, parent_page_num);
-  void* child = get_page(table->pager, child_page_num);
-  uint32_t child_max_key = get_node_max_key(child);
-  uint32_t index = internal_node_find_child(parent, child_max_key);
+  void* parent = getPage(table->pager, parent_page_num);
+  void* child = getPage(table->pager, child_page_num);
+  uint32_t child_max_key = getNodeMaxKey(child);
+  uint32_t index = internalNodeFindChild(parent, child_max_key);
 
-  uint32_t original_num_keys = *internal_node_num_keys(parent);
-  *internal_node_num_keys(parent) = original_num_keys + 1;
+  uint32_t original_num_keys = *internalNodeNumKeys(parent);
+  *internalNodeNumKeys(parent) = original_num_keys + 1;
 
   if (original_num_keys >= BTree::nInternalNodeMaxCells) {
     sysLogger.LogToSyslog("Need to implement splitting internal node\n");
     exit(EXIT_FAILURE);
   }
 
-  uint32_t right_child_page_num = *internal_node_right_child(parent);
-  void* right_child = get_page(table->pager, right_child_page_num);
+  uint32_t right_child_page_num = *internalNodeRightChild(parent);
+  void* right_child = getPage(table->pager, right_child_page_num);
 
-  if (child_max_key > get_node_max_key(right_child)) {
+  if (child_max_key > getNodeMaxKey(right_child)) {
     /* Replace right child */
-    *internal_node_child(parent, original_num_keys) = right_child_page_num;
-    *internal_node_key(parent, original_num_keys) =
-        get_node_max_key(right_child);
-    *internal_node_right_child(parent) = child_page_num;
+    *internalNodeChild(parent, original_num_keys) = right_child_page_num;
+    *internalNodeKey(parent, original_num_keys) =
+        getNodeMaxKey(right_child);
+    *internalNodeRightChild(parent) = child_page_num;
   } else {
     /* Make room for the new cell */
     for (uint32_t i = original_num_keys; i > index; i--) {
-      void* destination = internal_node_cell(parent, i);
-      void* source = internal_node_cell(parent, i - 1);
+      void* destination = internalNodeCell(parent, i);
+      void* source = internalNodeCell(parent, i - 1);
       memcpy(destination, source, BTree::nInternalNodeCellSize);
     }
-    *internal_node_child(parent, index) = child_page_num;
-    *internal_node_key(parent, index) = child_max_key;
+    *internalNodeChild(parent, index) = child_page_num;
+    *internalNodeKey(parent, index) = child_max_key;
   }
 }
 
-void DataBase::update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key) {
-  uint32_t old_child_index = internal_node_find_child(node, old_key);
-  *internal_node_key(node, old_child_index) = new_key;
+void DataBase::updateInternalNodeKey(void* node, uint32_t old_key, uint32_t new_key) {
+  uint32_t old_child_index = internalNodeFindChild(node, old_key);
+  *internalNodeKey(node, old_child_index) = new_key;
 }
 
 void DataBase::leafNodeSplitAndInsert( Cursor* cursor, char* key, Row* value )
@@ -751,21 +746,21 @@ void DataBase::leafNodeSplitAndInsert( Cursor* cursor, char* key, Row* value )
   Insert the new value in one of the two nodes.
   Update parent or create a new parent.
   */
-  void* old_node = get_page(cursor->table->pager, cursor->page_num);
+  void* old_node = getPage(cursor->table->pager, cursor->page_num);
 
   // получить ключ с наибольшим значением
   // !!! надо править !!!
-  uint32_t old_max = get_node_max_key(old_node);
+  uint32_t old_max = getNodeMaxKey(old_node);
 
   // получаем номер страницы, которую надо будет создать
-  uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
+  uint32_t new_page_num = getUnusedPageNum(cursor->table->pager);
   // создали страницу в памяти
-  void* new_node = get_page(cursor->table->pager, new_page_num);
+  void* new_node = getPage(cursor->table->pager, new_page_num);
 
-  initialize_leaf_node(new_node);
-  *node_parent(new_node) = *node_parent(old_node);
-  *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
-  *leaf_node_next_leaf(old_node) = new_page_num;
+  initializeLeafNode(new_node);
+  *nodeParent(new_node) = *nodeParent(old_node);
+  *leafNodeNextLeaf(new_node) = *leafNodeNextLeaf(old_node);
+  *leafNodeNextLeaf(old_node) = new_page_num;
 
   /*
   All existing keys plus new key should should be divided
@@ -785,48 +780,48 @@ void DataBase::leafNodeSplitAndInsert( Cursor* cursor, char* key, Row* value )
     }
 
     uint32_t index_within_node = i % BTree::nLeafNodeLeftSplitCount;
-    // void* destination = leaf_node_cell(destination_node, index_within_node);
+    // void* destination = leafNodeCellId(destination_node, index_within_node);
     void* destination = leafNodeCell(destination_node, index_within_node);
 
     if (i == cursor->cell_num)
     {
-      serialize_row(value,
-                    leaf_node_value(destination_node, index_within_node));
-      // *leaf_node_key(destination_node, index_within_node) = key;
+      serializeRow(value,
+                    leafNodeValueId(destination_node, index_within_node));
+      // *leafNodeKeyId(destination_node, index_within_node) = key;
       memcpy(leafNodeKey(destination_node, index_within_node), key, strlen(key));
     }
     else if (i > cursor->cell_num)
     {
-      memcpy(destination, leaf_node_cell(old_node, i - 1), BTree::nLeafNodeCellSize);
+      memcpy(destination, leafNodeCellId(old_node, i - 1), BTree::nLeafNodeCellSize);
     }
     else
     {
-      memcpy(destination, leaf_node_cell(old_node, i), BTree::nLeafNodeCellSize);
+      memcpy(destination, leafNodeCellId(old_node, i), BTree::nLeafNodeCellSize);
     }
   }
 
   /* Update cell count on both leaf nodes */
-  *(leaf_node_num_cells(old_node)) = BTree::nLeafNodeLeftSplitCount;
-  *(leaf_node_num_cells(new_node)) = BTree::nLeafNodeRightSplitCount;
+  *(leafNodeNumCells(old_node)) = BTree::nLeafNodeLeftSplitCount;
+  *(leafNodeNumCells(new_node)) = BTree::nLeafNodeRightSplitCount;
 
   // if original node is root, than it has no parent
-  if (is_node_root(old_node))
+  if (isNodeRoot(old_node))
   {
-    return create_new_root(cursor->table, new_page_num);
+    return createNewRoot(cursor->table, new_page_num);
   }
   else
   {
-    uint32_t parent_page_num = *node_parent(old_node);
-    uint32_t new_max = get_node_max_key(old_node);
-    void* parent = get_page(cursor->table->pager, parent_page_num);
+    uint32_t parent_page_num = *nodeParent(old_node);
+    uint32_t new_max = getNodeMaxKey(old_node);
+    void* parent = getPage(cursor->table->pager, parent_page_num);
 
-    update_internal_node_key(parent, old_max, new_max);
-    internal_node_insert(cursor->table, parent_page_num, new_page_num);
+    updateInternalNodeKey(parent, old_max, new_max);
+    internalNodeInsert(cursor->table, parent_page_num, new_page_num);
     return;
   }
 }
 
-void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
+void DataBase::leafNodeSplitAndInsert(Cursor* cursor, uint32_t key, Row* value) {
   /*
   Create a new node and move half the cells over.
   Insert the new value in one of the two nodes.
@@ -836,24 +831,24 @@ void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* val
   // нода = page = 4096 Mb  
 
   // получение ноды, на которой сейчас находится курсор. Ее надо разбить на две
-  void* old_node = get_page(cursor->table->pager, cursor->page_num);
+  void* old_node = getPage(cursor->table->pager, cursor->page_num);
   // получение значения максимального ключа среди cells, которые хранятся в ноде
-  uint32_t old_max = get_node_max_key(old_node);
+  uint32_t old_max = getNodeMaxKey(old_node);
         
   // получаем порядковый номер новой ноды, которая будет добалена в конец файла
-  uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
+  uint32_t new_page_num = getUnusedPageNum(cursor->table->pager);
   // физически создали новый объект ноды
-  void* new_node = get_page(cursor->table->pager, new_page_num);
+  void* new_node = getPage(cursor->table->pager, new_page_num);
 
   // проинициализировали новый созданный объект как LEAF_NODE
-  initialize_leaf_node(new_node);
+  initializeLeafNode(new_node);
 
   // ссылку на родителя для новой ноды выставляем такой же как и для старой ноды
-  *node_parent(new_node) = *node_parent(old_node);
+  *nodeParent(new_node) = *nodeParent(old_node);
   // ссылку на своего брата для новой ноды выставляем такой же как и для старой ноды
-  *leaf_node_next_leaf(new_node) = *leaf_node_next_leaf(old_node);
+  *leafNodeNextLeaf(new_node) = *leafNodeNextLeaf(old_node);
   // Internal nodes will point to their children by storing the page number that stores the child
-  *leaf_node_next_leaf(old_node) = new_page_num;
+  *leafNodeNextLeaf(old_node) = new_page_num;
 
   /*
   All existing keys plus new key should should be divided
@@ -871,50 +866,50 @@ void DataBase::leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* val
     // это просто порядковый номер, а не ключ
     uint32_t index_within_node = i % BTree::nLeafNodeLeftSplitCount;
     // это уже destination_cell
-    void* destination = leaf_node_cell(destination_node, index_within_node);
+    void* destination = leafNodeCellId(destination_node, index_within_node);
 
     // при ранее выполненном поиске выяснили, что надо вставить новое значение на эту позицию
     if (i == cursor->cell_num) {
       // представили в бинарном виде
-      serialize_row(value,
-                    leaf_node_value(destination_node, index_within_node));
+      serializeRow(value,
+                    leafNodeValueId(destination_node, index_within_node));
       // выставили новый ключ
-      *leaf_node_key(destination_node, index_within_node) = key;
+      *leafNodeKeyId(destination_node, index_within_node) = key;
     } else if (i > cursor->cell_num) {
-      memcpy(destination, leaf_node_cell(old_node, i - 1), BTree::nLeafNodeCellSize);
+      memcpy(destination, leafNodeCellId(old_node, i - 1), BTree::nLeafNodeCellSize);
     } else {
-      memcpy(destination, leaf_node_cell(old_node, i), BTree::nLeafNodeCellSize);
+      memcpy(destination, leafNodeCellId(old_node, i), BTree::nLeafNodeCellSize);
     }
   }
 
   /* Update cell count on both leaf nodes */
-  *(leaf_node_num_cells(old_node)) = BTree::nLeafNodeLeftSplitCount;
-  *(leaf_node_num_cells(new_node)) = BTree::nLeafNodeRightSplitCount;
+  *(leafNodeNumCells(old_node)) = BTree::nLeafNodeLeftSplitCount;
+  *(leafNodeNumCells(new_node)) = BTree::nLeafNodeRightSplitCount;
 
   // если у разбиваемой ноды не было родителя, то надо его создать
-  if (is_node_root(old_node)) {
-    return create_new_root(cursor->table, new_page_num);
+  if (isNodeRoot(old_node)) {
+    return createNewRoot(cursor->table, new_page_num);
   } else {
     // смотрим на какой странице располагался родитель ноды, которую сейчас разбили
-    uint32_t parent_page_num = *node_parent(old_node);
+    uint32_t parent_page_num = *nodeParent(old_node);
     // получение значения максимального ключа среди cells, которые хранятся в ноде
-    uint32_t new_max = get_node_max_key(old_node);
+    uint32_t new_max = getNodeMaxKey(old_node);
     // получение ноды на которой хранится родитель
-    void* parent = get_page(cursor->table->pager, parent_page_num);
+    void* parent = getPage(cursor->table->pager, parent_page_num);
 
     // обновляем ключ в интернал ноде. !!!! надо править !!!
     // внутри надо делать memcpy()
-    update_internal_node_key(parent, old_max, new_max);
+    updateInternalNodeKey(parent, old_max, new_max);
     // вставка internal ноды. !!!! надо править !!!
-    internal_node_insert(cursor->table, parent_page_num, new_page_num);
+    internalNodeInsert(cursor->table, parent_page_num, new_page_num);
     return;
   }
 }
 
-void DataBase::leaf_node_insert(Cursor* cursor, char* key, Row* value) {
-  void* node = get_page(cursor->table->pager, cursor->page_num);
+void DataBase::leafNodeInsert(Cursor* cursor, char* key, Row* value) {
+  void* node = getPage(cursor->table->pager, cursor->page_num);
 
-  uint32_t num_cells = *leaf_node_num_cells(node);
+  uint32_t num_cells = *leafNodeNumCells(node);
   if (num_cells >= BTree::nLeafNodeMaxCells)
   {
     // Node full
@@ -928,28 +923,28 @@ void DataBase::leaf_node_insert(Cursor* cursor, char* key, Row* value) {
     // Make room for new cell
     for( uint32_t i = num_cells; i > cursor->cell_num; i-- )
     {
-      memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1),
+      memcpy(leafNodeCellId(node, i), leafNodeCellId(node, i - 1),
          BTree::nLeafNodeCellSize);
     }
   }
 
-  *(leaf_node_num_cells(node)) += 1;
+  *(leafNodeNumCells(node)) += 1;
   // выставить ключ для конкретной ячейки, расположенной на page
-  // *(leaf_node_key(node, cursor->cell_num)) = key;
+  // *(leafNodeKeyId(node, cursor->cell_num)) = key;
   // we need +1 for terminateing zero in the string end ???
   memcpy(leafNodeKey(node, cursor->cell_num), key, strlen(key) /*+ 1*/);
-  serialize_row(value, leafNodeValue(node, cursor->cell_num));
+  serializeRow(value, leafNodeValue(node, cursor->cell_num));
 }
 
-QueryResult DataBase::execute_insert(Statement* statement, Table* table) {
+QueryResult DataBase::executeInsert(Statement* statement, Table* table) {
   Row* row_to_insert = &(statement->row_to_insert);
 
   // key_to_insert - это ключ не в raw, а ключ для BTree дерева
   char* key_to_insert = row_to_insert->key;
-  Cursor* cursor= table_find(table, key_to_insert);
+  Cursor* cursor= tableFind(table, key_to_insert);
 
-  void* node = get_page(table->pager, cursor->page_num);
-  uint32_t num_cells = *leaf_node_num_cells(node);
+  void* node = getPage(table->pager, cursor->page_num);
+  uint32_t num_cells = *leafNodeNumCells(node);
 
   // cell_num - индекс ячейки в кот. надо разместить элемент
   // если надо вставить по-середине, то убеждаемся, что такого ключа раньше не было
@@ -962,15 +957,15 @@ QueryResult DataBase::execute_insert(Statement* statement, Table* table) {
     }
   }
 
-  leaf_node_insert( cursor, row_to_insert->key, row_to_insert );
+  leafNodeInsert( cursor, row_to_insert->key, row_to_insert );
 
   free(cursor);
 
   return QueryResult( eQueryStatus::esSuccss );;
 }
 
-QueryResult DataBase::execute_list(Statement* statement, Table* table) {
-  Cursor* cursor = table_start( table );
+QueryResult DataBase::executeList(Statement* statement, Table* table) {
+  Cursor* cursor = tableStart( table );
 
   Row row;
   std::string s_key;
@@ -979,12 +974,11 @@ QueryResult DataBase::execute_list(Statement* statement, Table* table) {
   {
     s_key = getKey( cursor );
 
-    // deserialize_row( cursor_key(cursor), cursor_value(cursor), &row );
+    // deserializeRow( cursorKey(cursor), cursorValue(cursor), &row );
     ss << s_key;
     ss << std::endl;
-    // print_row(&row);
 
-    cursor_advance( cursor );
+    cursorAdvance( cursor );
   }
 
   free(cursor);
@@ -1000,33 +994,33 @@ QueryResult DataBase::execute_list(Statement* statement, Table* table) {
   return query_result;
 }
 
-QueryResult DataBase::execute_statement(Statement* statement, Table* table)
+QueryResult DataBase::executeStatement(Statement* statement, Table* table)
 {
    switch (statement->eType)
    {
       case( eStatementType::stPut ) :
       {
-         return execute_insert(statement, table);
+         return executeInsert(statement, table);
       }
       case( eStatementType::stList ) :
       {
-         return execute_list(statement, table);
+         return executeList(statement, table);
       }
    }
 }
 
 QueryResult DataBase::ExecuteQuery( const std::string &s_query )
 {
-   input_buffer = new_input_buffer();
-   read_input(input_buffer, s_query );
+   input_buffer = newInputBuffer();
+   readInput(input_buffer, s_query );
 
    QueryResult query_result;
 
    if( input_buffer->buffer[0] == '.' )
    {
-      db_open();
+      dbOpen();
 
-      switch( do_meta_command( input_buffer, table ) )
+      switch( doMetaCommand( input_buffer, table ) )
       {
          case eMetaCmdResult::mcrSuccess :
             query_result.queryStatus = eQueryStatus::esSuccss;
@@ -1037,13 +1031,13 @@ QueryResult DataBase::ExecuteQuery( const std::string &s_query )
             break;
       }
 
-      db_close();
+      dbClose();
 
       return query_result;
    }
 
    Statement statement;
-   switch( prepare_statement( input_buffer, &statement ) )
+   switch( prepareStatement( input_buffer, &statement ) )
    {
      case ePrepareResult::prSuccess:
        break;
@@ -1061,10 +1055,10 @@ QueryResult DataBase::ExecuteQuery( const std::string &s_query )
        return query_result;
    }
 
-   db_open();
+   dbOpen();
 
    query_result =
-      execute_statement(&statement, table);
+      executeStatement(&statement, table);
 
    switch( query_result.queryStatus )
    {
@@ -1076,7 +1070,7 @@ QueryResult DataBase::ExecuteQuery( const std::string &s_query )
        break;
    }
 
-   db_close();
+   dbClose();
 
    return query_result;
 }
@@ -1089,15 +1083,15 @@ int main(int argc, char* argv[]) {
   }
 
   char* filename = argv[1];
-  Table* table = db_open(filename);
+  Table* table = dbOpen(filename);
 
-  InputBuffer* input_buffer = new_input_buffer();
+  InputBuffer* input_buffer = newInputBuffer();
   while (true) {
-    print_prompt();
-    read_input(input_buffer);
+    printPrompt();
+    readInput(input_buffer);
 
     if (input_buffer->buffer[0] == '.') {
-      switch (do_meta_command(input_buffer, table)) {
+      switch (doMetaCommand(input_buffer, table)) {
         case (META_COMMAND_SUCCESS):
           continue;
         case (META_COMMAND_UNRECOGNIZED_COMMAND):
@@ -1107,7 +1101,7 @@ int main(int argc, char* argv[]) {
     }
 
     Statement statement;
-    switch (prepare_statement(input_buffer, &statement)) {
+    switch (prepareStatement(input_buffer, &statement)) {
       case (PREPARE_SUCCESS):
         break;
       case (PREPARE_NEGATIVE_ID):
@@ -1125,7 +1119,7 @@ int main(int argc, char* argv[]) {
         continue;
     }
 
-    switch (execute_statement(&statement, table)) {
+    switch (executeStatement(&statement, table)) {
       case (EXECUTE_SUCCESS):
         sysLogger.LogToSyslog("Executed.\n");
         break;
