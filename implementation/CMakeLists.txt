@@ -27,6 +27,10 @@ set(kvd_headers ${kvd_headers}
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/QueryResult.h"
    "${CMAKE_CURRENT_LIST_DIR}/AppProtocol.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/SysLogger.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBaseStuff.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBaseEnums.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/BTree.h"
 )
 
 set(kvd_sources ${kvd_sources}
@@ -37,6 +41,8 @@ set(kvd_sources ${kvd_sources}
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/QueryResult.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/AppProtocol.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/SysLogger.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/BTree.cpp"
 )
 
 set(kvctl_headers ${kvctl_headers}
@@ -46,6 +52,8 @@ set(kvctl_headers ${kvctl_headers}
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/QueryResult.h"
    "${CMAKE_CURRENT_LIST_DIR}/AppProtocol.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/SysLogger.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/BTree.h"
 )
 
 set(kvctl_sources ${kvctl_sources}
@@ -56,6 +64,8 @@ set(kvctl_sources ${kvctl_sources}
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/QueryResult.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/AppProtocol.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/SysLogger.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/BTree.cpp"
 )
 
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")

@@ -1,6 +1,7 @@
 #include"UDSClient.h"
 #include"../kvd/DataBase.h"
 #include"../kvd/Daemon.h"
+#include"../kvd/SysLogger.h"
 
 #include"AppProtocol.h"
 
@@ -58,7 +59,7 @@ int main( int argc, char *argv[] )
       return 0;
    }
 
-   SysLogLogger sl;
+   SysLogger sl;
    {
       Daemon daemon;
 

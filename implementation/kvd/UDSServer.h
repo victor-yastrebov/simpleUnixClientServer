@@ -25,7 +25,7 @@ public:
    int   startProcessing( const std::string &s_path_to_db );
 
 private:
-    SysLogLogger   sysLogger;
+       SysLogger   sysLogger;
        const int   nMaxClients;
              int   listenerSocket;
    std::set<int>   connectedSockets;
