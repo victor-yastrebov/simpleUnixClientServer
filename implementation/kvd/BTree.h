@@ -30,6 +30,10 @@ struct BTree
 
     static const uint32_t nPageSize;
 
+    static const uint32_t nIdOffset;
+    static const uint32_t nUserNameOffset;
+    static const uint32_t nEmailOffset;
+
     // Common Node Header Layout
     static const uint32_t nNodeTypeSize;
     static const uint32_t nNodeTypeOffset;

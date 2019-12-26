@@ -49,6 +49,36 @@ void testMe(std::string s_query)
 
 int main( int argc, char *argv[] )
 {
+
+   DataBase db( "/tmp/kvd_db.txt" );
+
+   db.executeQuery( "PUT 1 user user@mail.ru" );
+   db.executeQuery( "PUT 2 user user@mail.ru" );
+   db.executeQuery( "PUT 3 user user@mail.ru" );
+   db.executeQuery( "PUT 4 user user@mail.ru" );
+
+   db.executeQuery( "PUT 5 user user@mail.ru" );
+   db.executeQuery( "PUT 6 user user@mail.ru" );
+   db.executeQuery( "PUT 7 user user@mail.ru" );
+   db.executeQuery( "PUT 8 user user@mail.ru" );
+   /*
+
+   db.executeQuery( "PUT 55 user user@mail.ru" );
+   db.executeQuery( "PUT 65 user user@mail.ru" );
+   db.executeQuery( "PUT 75 user user@mail.ru" );
+   */
+
+
+   auto ret = db.executeQuery( "LIST" );
+
+   std::cout << ret.sData << std::endl;
+
+   auto ret2 = db.executeQuery( ".btree" );
+
+   // std::cout << ret2.sData << std::endl
+
+   return 1;
+
 /*
    AppProtocol ap;
    bool ok;

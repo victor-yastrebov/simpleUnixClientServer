@@ -26,6 +26,10 @@ const uint32_t BTree::nRowSize = BTree::nKeyStrSize + BTree::nValueStrSize;
 
 const uint32_t BTree::nPageSize = 4096;
 
+const uint32_t BTree::nIdOffset = 0;
+const uint32_t BTree::nUserNameOffset = BTree::nIdOffset + BTree::nIdSize;
+const uint32_t BTree::nEmailOffset = BTree::nUserNameOffset + BTree::nUserNameSize;
+
 // common node header layoyt
 const uint32_t BTree::nNodeTypeSize = sizeof(uint8_t);
 const uint32_t BTree::nNodeTypeOffset = 0;
