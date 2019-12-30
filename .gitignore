@@ -1,3 +1,4 @@
 implementation-build/*
 build-implementation-*/*
+#implementation/kvd/3dparty/*
 *.user
