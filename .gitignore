@@ -1,4 +1,5 @@
 implementation-build/*
 build-implementation-*/*
-#implementation/kvd/3dparty/*
+build/*
 *.user
+*.swp
