@@ -2,7 +2,7 @@
 #include<algorithm>
 
 #include"asio.hpp"
-
+#include"UDSServer.h"
 
 #include<cstdio>
 #include<array>
@@ -10,6 +10,7 @@
 
 #if defined(ASIO_HAS_LOCAL_SOCKETS)
 
+/*
 using asio::local::stream_protocol;
 
 class session
@@ -104,6 +105,7 @@ private:
   asio::io_service& io_service_;
   stream_protocol::acceptor acceptor_;
 };
+*/
 
 int main(int argc, char* argv[])
 {
