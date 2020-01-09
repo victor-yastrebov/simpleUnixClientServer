@@ -12,6 +12,12 @@ public:
     socket_(io_service),
     pDataBase( p_db )
   {
+     std::cout << "session CTOR" << std::endl;
+  }
+
+  ~session()
+  {
+     std::cout << "session DTOR" << std::endl;
   }
 
   stream_protocol::socket& socket()
@@ -22,7 +28,7 @@ public:
   void start()
   {
     socket_.async_read_some(asio::buffer(data_),
-        std::bind(&session::handle_read,
+       std::bind(&session::handle_read,
           shared_from_this(),
           std::placeholders::_1,
           std::placeholders::_2));
@@ -53,11 +59,15 @@ public:
             shared_from_this(),
             std::placeholders::_1));
     }
+    else
+    {
+       std::cout << "handle_read error: " << error << std::endl;
+    }
   }
 
   void handle_write(const asio::error_code& error)
   {
-    std::cout << "handle write ec: " << error << std::endl;
+    // std::cout << "handle write ec: " << error << std::endl;
     if (!error)
     {
 /*
