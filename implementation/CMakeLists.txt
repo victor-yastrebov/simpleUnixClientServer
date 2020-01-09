@@ -42,18 +42,19 @@ set(kvd_headers ${kvd_headers}
 #   "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.h"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/Session.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
 )
 
 set(kvd_sources ${kvd_sources}
   #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd2.cpp"
   #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd3.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd4.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
   #"${CMAKE_CURRENT_LIST_DIR}/kvd/StreamServer.cpp"
    #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
    #"${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
-  "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
-   #"${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
+  #"${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
 )
 
 #set(kvctl_headers ${kvctl_headers}
@@ -65,7 +66,7 @@ set(kvd_sources ${kvd_sources}
 
 set(kvctl_sources ${kvctl_sources}
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl2.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"

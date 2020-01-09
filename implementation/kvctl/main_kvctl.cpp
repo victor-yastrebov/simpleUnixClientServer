@@ -1,38 +1,71 @@
-#include"UDSClient.h"
-#include"../kvd/DataBase.h"
-#include"../kvd/Daemon.h"
+//
+// stream_client.cpp
+// ~~~~~~~~~~~~~~~~~
+//
+// Copyright (c) 2003-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
 
-int main()
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include "asio.hpp"
+
+#if defined(ASIO_HAS_LOCAL_SOCKETS)
+
+using asio::local::stream_protocol;
+
+enum { max_length = 1024 };
+
+int main(int argc, char* argv[])
 {
-   /**/
-   SysLogLogger sl;
-   {
-      Daemon daemon;
-
-      if(!daemon.Daemonise()) return 1;
-
-      sl.LogToSyslog( "---New instance start---" );
-
-      DataBase db;
-      db.Initialize( "/home/user/UnixClientServer/clientServerDB/implementation/kvd/my_db.txt" );
-
-      // db.ExecuteQuery( "insert" );
-      db.ExecuteQuery( "insert 2 ilonmask ilonmask@tesla.ru" );
-      db.ExecuteQuery( "insert 3 vayastrebov yastrebov@corp.ru" );
-      db.ExecuteQuery( "select" );
-      db.ExecuteQuery( ".btree" );
-      db.ExecuteQuery( ".exit" );
+  try
+  {
+    if (argc != 3)
+    {
+      std::cerr << "Usage: stream_client <client_sock> <server_sock>\n";
+      return 1;
     }
 
-   sl.LogToSyslog( "Finished success" );
-   return 0;
-   /**/
+    asio::io_service io_service;
 
-   UDSClient uds_client;
-   uds_client.Connect();
-   uds_client.StartSession();
+    std::remove(argv[1]);
+    stream_protocol::socket s(io_service, stream_protocol::endpoint( argv[1] ));
 
+    s.connect(stream_protocol::endpoint(argv[2]));
 
+    using namespace std; // For strlen.
+    std::cout << "Enter message: ";
+    char request[max_length];
+    std::cin.getline(request, max_length);
+    size_t request_length = strlen(request);
+    asio::write(s, asio::buffer(request, request_length));
 
-   return 0;
+    char reply[max_length];
+
+    asio::error_code ec;
+    size_t reply_length = 0;
+
+    while( !ec )
+    {
+       reply_length = asio::read(s,
+           asio::buffer(reply, max_length), ec);
+    }
+
+    std::cout << "Reply is: ";
+    std::cout.write(reply, reply_length);
+    std::cout << "\n";
+  }
+  catch (std::exception& e)
+  {
+    std::cerr << "Exception: " << e.what() << "\n";
+  }
+
+  return 0;
 }
+
+#else // defined(ASIO_HAS_LOCAL_SOCKETS)
+# error Local sockets not available on this platform.
+#endif // defined(ASIO_HAS_LOCAL_SOCKETS)
