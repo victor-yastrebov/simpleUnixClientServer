@@ -53,7 +53,7 @@ QueryInfo DataBase::ParseQueryString( const std::string& s_query ) const
    // fill in type
    if(s_type == "LIST") query_info.eType = eQueryType::qtLIST;
    else if(s_type == "put") query_info.eType  =  eQueryType::qtPUT;
-   else if(s_type == "GET") query_info.eType = eQueryType::qtGET;
+   else if(s_type == "get") query_info.eType = eQueryType::qtGET;
    else if(s_type == "erase") query_info.eType = eQueryType::qtERASE;
    else b_unknown_type = true;
    
@@ -91,7 +91,7 @@ QueryInfo DataBase::ParseQueryString( const std::string& s_query ) const
 std::string DataBase::ProcessQuery( const std::string &s_query ) const
 {
    const QueryInfo query_info = ParseQueryString( s_query ); 
-   std::string s_ans;
+   std::optional<std::string> s_ans;
 
    switch( query_info.eType )
    {
@@ -103,7 +103,11 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       ProcessPutQuery( query_info );
       break;
    case eQueryType::qtGET:
-      s_ans = "GET query OK";
+      s_ans = ProcessGetQuery( query_info );
+      if( ! s_ans )
+      {
+         s_ans = "Not found";
+      }
       break;
    case eQueryType::qtERASE:
       s_ans = "ERASE query OK";
@@ -114,10 +118,10 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       break;
    }
 
-   std::cout << "Key: " << query_info.sKey << std::endl;;
-   std::cout << "Value: " << query_info.sValue << std::endl;
+   // std::cout << "Key: " << query_info.sKey << std::endl;;
+   // std::cout << "Value: " << query_info.sValue << std::endl;
 
-   return s_ans;
+   return s_ans.value();
 }
 
 bool DataBase::CreateDbFolder() const noexcept
@@ -151,28 +155,68 @@ bool DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
       return false;
    }
 
-   std::ifstream fs( s_path_to_record);  
+   std::fstream fs( s_path_to_record, std::ios::in | std::ios::out );  
 
-   size_t key_len;
+   size_t key_len = 0;
    fs >> key_len;
-   std::cout << "Key len is: " << key_len << std::endl;
+   fs.ignore( 1 );   // ignore '\n'
 
-   std::string s_key;
-// std::vector<char> s_key;
-   s_key.reserve( key_len );
-   fs.read( s_key.data(), key_len );
-if(fs) std::cout << "Read OK" << std::endl;
-else std::cout << "Read ERROR" << std::endl;
+   fs.ignore( key_len );
+   fs.ignore( 1 );   // ignore '\n'
 
-   std::string s(s_key.begin(), s_key.end());
-   std::cout << "Key is: " << s << std::endl;
-
-   // std::string s_value;
-   // s_value.reserve( key_len );
-   // fs.read(s_value.c_str(), value_len);
-   // std::cout << "Value is: " << s_value << std::endl;
+   int is_valid = 0;
+   fs << is_valid ;
 
    return true;
+}
+
+std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_info ) const
+{
+   const size_t str_hash = Hash( query_info.sKey );
+   const std::string s_path_to_record = sPathToDb + "//" + std::to_string( str_hash );
+
+   std::error_code ec;
+   if( false == std::filesystem::exists( s_path_to_record, ec ) )
+   {
+      return std::nullopt;
+   }
+
+   // std::ifstream fs( s_path_to_record, std::ifstream::binary );  
+   std::ifstream fs( s_path_to_record );  
+
+   size_t key_len = 0;
+   fs >> key_len;
+   fs.ignore( 1 );   // ignore '\n'
+   // std::cout << "Key len is: " << key_len << std::endl;
+
+   std::string s_key;
+   s_key.resize( key_len );
+   fs.read( s_key.data(), key_len );
+   fs.ignore( 1 );   // ignore '\n'
+   // std::cout << "Key is: " << s_key << std::endl;
+
+   int is_valid = 0;
+   fs >> is_valid ;
+   fs.ignore( 1 );   // ignore '\n'
+   // std::cout << "Is valid: " << is_valid << std::endl;
+    
+   if( 0 == is_valid )
+   {
+      return std::nullopt;
+   }
+
+   size_t value_len = 0;
+   fs >> value_len;
+   fs.ignore( 1 );
+   // std::cout << "Value len is: " << value_len << std::endl;
+
+   std::string s_value;
+   s_value.resize( value_len );
+   fs.read( s_value.data(), value_len);
+
+   // std::cout << "Value is: " << s_value << std::endl;
+
+   return s_value;
 }
 
 bool DataBase::ProcessPutQuery( const QueryInfo &query_info ) const
@@ -182,10 +226,10 @@ bool DataBase::ProcessPutQuery( const QueryInfo &query_info ) const
    const int b_row_is_not_deleted = 1;
 
    std::ofstream of( sPathToDb + "//" + std::to_string( str_hash ) );  
-   of << query_info.sKey.size();
-   of << query_info.sKey;
-   of << b_row_is_not_deleted;
-   of << query_info.sValue.size();
+   of << query_info.sKey.size() << std::endl;
+   of << query_info.sKey << std::endl;
+   of << b_row_is_not_deleted << std::endl;
+   of << query_info.sValue.size() << std::endl;
    of << query_info.sValue;
 
    return true;

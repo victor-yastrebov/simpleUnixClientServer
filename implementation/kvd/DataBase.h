@@ -12,6 +12,7 @@
 #pragma once
 
 #include<string>
+#include<optional>
 
 enum class eQueryType
 {
@@ -40,12 +41,14 @@ public:
    std::string   ProcessQuery( const std::string &s_query ) const;
 
 private:
+public:
    QueryInfo ParseQueryString( const std::string &sw_query ) const;
    bool   ProcessPutQuery( const QueryInfo &query_info ) const;
    bool   ProcessEraseQuery( const QueryInfo &query_info ) const;
-   bool   CreateDbFolder() const noexcept;
+   std::optional<std::string>   ProcessGetQuery( const QueryInfo &query_info ) const;
+     bool   CreateDbFolder() const noexcept;
    size_t   Hash( const std::string& s) const noexcept;
 
-   const std::string sPathToDb;
-   std::hash<std::string> hashFn;
+        const std::string   sPathToDb;
+   std::hash<std::string>   hashFn;
 };

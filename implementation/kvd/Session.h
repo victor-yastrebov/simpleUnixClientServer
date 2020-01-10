@@ -51,7 +51,7 @@ public:
       // for (std::size_t i = bytes_transferred; i < ret.size(); ++i)
       //   data_[i] = ret[i];
 
-      std::cout << "Bytes to send: " << ret.size() << std::endl;
+      // std::cout << "Bytes to send: " << ret.size() << std::endl;
       
       asio::async_write(socket_,
           asio::buffer(data_, ret.size()),

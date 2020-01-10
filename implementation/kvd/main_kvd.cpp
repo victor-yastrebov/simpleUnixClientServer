@@ -3,6 +3,7 @@
 
 #include"asio.hpp"
 #include"UDSServer.h"
+#include"DataBase.h"
 
 // #include<cstdio>
 // #include<array>
@@ -12,6 +13,22 @@
 
 int main(int argc, char* argv[])
 {
+/*
+  DataBase db;
+  std::string s_result;
+
+  db.ProcessQuery( "put key2 valueIsSuperFastAgain" );
+  s_result = db.ProcessQuery( "get key2" );
+  std::cout << "Result is: " << s_result << std::endl; 
+
+  db.ProcessQuery( "erase key2" );
+
+  s_result = db.ProcessQuery( "get key2" );
+  std::cout << "Result is: " << s_result << std::endl; 
+
+  return  1;
+*/
+
   try
   {
     if (argc != 2)
