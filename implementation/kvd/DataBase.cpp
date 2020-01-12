@@ -51,7 +51,7 @@ QueryInfo DataBase::ParseQueryString( const std::string& s_query ) const
 
    bool b_unknown_type = false;
    // fill in type
-   if(s_type == "LIST") query_info.eType = eQueryType::qtLIST;
+   if(s_type == "list") query_info.eType = eQueryType::qtLIST;
    else if(s_type == "put") query_info.eType  =  eQueryType::qtPUT;
    else if(s_type == "get") query_info.eType = eQueryType::qtGET;
    else if(s_type == "erase") query_info.eType = eQueryType::qtERASE;
@@ -96,7 +96,8 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
    switch( query_info.eType )
    {
    case eQueryType::qtLIST:
-      s_ans = "bar baz max tRex";
+      // s_ans = "bar baz max tRex";
+      s_ans = ProcessListQuery( query_info );
       break;
    case eQueryType::qtPUT:
       s_ans = "PUT query OK";
@@ -118,8 +119,8 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       break;
    }
 
-   // std::cout << "Key: " << query_info.sKey << std::endl;;
-   // std::cout << "Value: " << query_info.sValue << std::endl;
+   std::cout << "Key: " << query_info.sKey.size()  << std::endl;;
+   std::cout << "Value: " << query_info.sValue.size() << std::endl;
 
    return s_ans.value();
 }
@@ -168,6 +169,78 @@ bool DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
    fs << is_valid ;
 
    return true;
+}
+
+std::string DataBase::ProcessListQuery( const QueryInfo &query_info ) const
+{
+   if( query_info.sKey.empty() )
+   {
+      return ListAllKeys();
+   }
+   else
+   {
+      std::cout << "NOT Impelemented yet" << std::endl;
+      return ListKeysWithPrefix( query_info.sKey );
+   }
+
+   return std::string();
+}
+   
+std::string DataBase::ListKeysWithPrefix( const std::string& s_prefix ) const
+{
+   return std::string();
+}
+
+std::string DataBase::ListAllKeys() const
+{
+   namespace fs = std::filesystem;
+
+   std::string s_result;
+
+   for( auto& p: fs::directory_iterator( sPathToDb ) )
+   {
+      std::string s_path_to_record = p.path();
+      std::cout << p.path() << '\n';
+
+      std::ifstream fs( s_path_to_record );  
+
+      size_t key_len = 0;
+      fs >> key_len;
+      fs.ignore( 1 );   // ignore '\n'
+      // std::cout << "Key len is: " << key_len << std::endl;
+
+      std::string s_key;
+      s_key.resize( key_len );
+      fs.read( s_key.data(), key_len );
+      fs.ignore( 1 );   // ignore '\n'
+      // std::cout << "Key is: " << s_key << std::endl;
+
+      int is_valid = 0;
+      fs >> is_valid ;
+      fs.ignore( 1 );   // ignore '\n'
+      // std::cout << "Is valid: " << is_valid << std::endl;
+    
+      if( 0 == is_valid )
+      {
+         continue;
+      }
+
+      s_result += s_key;
+      s_result += ' ';
+
+      // if( 0 == s_key.compare( 0, s_prefix.size(), s_prefix ) )
+      // {
+      //    s_result += s_key;
+      //    s_result += ' ';
+      // }
+   }
+
+   if( !s_result.empty() )
+   {
+      s_result.pop_back();
+   }
+
+  return s_result;
 }
 
 std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_info ) const
