@@ -53,7 +53,7 @@ set(kvd_sources ${kvd_sources}
   #"${CMAKE_CURRENT_LIST_DIR}/kvd/StreamServer.cpp"
    #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
    #"${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
-  #"${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
 )
 

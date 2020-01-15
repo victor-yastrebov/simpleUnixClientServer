@@ -42,16 +42,16 @@ public:
 
 private:
 public:
-   QueryInfo ParseQueryString( const std::string &sw_query ) const;
-   bool   ProcessPutQuery( const QueryInfo &query_info ) const;
-   bool   ProcessEraseQuery( const QueryInfo &query_info ) const;
+                    QueryInfo   ParseQueryString( const std::string &sw_query ) const;
+                         bool   ProcessPutQuery( const QueryInfo &query_info ) const;
+                         bool   ProcessEraseQuery( const QueryInfo &query_info ) const;
    std::optional<std::string>   ProcessGetQuery( const QueryInfo &query_info ) const;
-   std::string   ProcessListQuery( const QueryInfo &query_info ) const;
-          bool   CreateDbFolder() const noexcept;
-        size_t   Hash( const std::string& s) const noexcept;
-   std::string   ListKeys( const std::string& s_prefix = std::string() ) const;
-          bool   MatchListQuery( const std::string &s_prefix, const std::string &s_key ) const noexcept;
+                  std::string   ProcessListQuery( const QueryInfo &query_info ) const;
+                         bool   CreateDbFolder() const noexcept;
+                       size_t   Hash( const std::string& s) const noexcept;
+                  std::string   ListKeys( const std::string& s_prefix = std::string() ) const;
+                         bool   MatchListQuery( const std::string &s_prefix, const std::string &s_key ) const noexcept;
 
-        const std::string   sPathToDb;
-   std::hash<std::string>   hashFn;
+            const std::string   sPathToDb;
+       std::hash<std::string>   hashFn;
 };

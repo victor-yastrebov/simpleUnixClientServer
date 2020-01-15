@@ -1,6 +1,8 @@
 #include<memory>
+#include<iostream>
 
 #include"DataBase.h"
+#include"asio.hpp"
 
 using asio::local::stream_protocol;
 
@@ -39,18 +41,11 @@ public:
   {
     if (!error)
     {
-      // Compute result.
-      //for (std::size_t i = 0; i < bytes_transferred; ++i)
-      //  data_[i] = std::toupper(data_[i]);
-
       const std::string ret = pDataBase->ProcessQuery( std::string( data_.begin(), data_.begin() + bytes_transferred ) ); 
 
       for (std::size_t i = 0; i < ret.size(); ++i)
         data_[i] = ret[i];
       
-      // for (std::size_t i = bytes_transferred; i < ret.size(); ++i)
-      //   data_[i] = ret[i];
-
       // std::cout << "Bytes to send: " << ret.size() << std::endl;
       
       asio::async_write(socket_,
