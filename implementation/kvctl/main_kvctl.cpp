@@ -54,8 +54,8 @@ int main(int argc, char* argv[])
            asio::buffer(reply, max_length), ec);
     }
 
-    std::cout << "Reply is: ";
-    std::cout.write(reply, reply_length);
+    // std::cout << "Reply is: ";
+    std::cout.write( reply, reply_length );
     std::cout << "\n";
   }
   catch (std::exception& e)

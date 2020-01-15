@@ -47,10 +47,10 @@ public:
    bool   ProcessEraseQuery( const QueryInfo &query_info ) const;
    std::optional<std::string>   ProcessGetQuery( const QueryInfo &query_info ) const;
    std::string   ProcessListQuery( const QueryInfo &query_info ) const;
-     bool   CreateDbFolder() const noexcept;
-   size_t   Hash( const std::string& s) const noexcept;
-  std::string   ListAllKeys() const;
-  std::string   ListKeysWithPrefix( const std::string& s_prefix ) const;
+          bool   CreateDbFolder() const noexcept;
+        size_t   Hash( const std::string& s) const noexcept;
+   std::string   ListKeys( const std::string& s_prefix = std::string() ) const;
+          bool   MatchListQuery( const std::string &s_prefix, const std::string &s_key ) const noexcept;
 
         const std::string   sPathToDb;
    std::hash<std::string>   hashFn;

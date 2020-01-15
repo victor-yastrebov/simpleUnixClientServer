@@ -13,14 +13,21 @@
 
 int main(int argc, char* argv[])
 {
+/*
   DataBase db;
   std::string s_result;
+  db.ProcessQuery( "put key2 valueIsSuperFastAgain" );
+  db.ProcessQuery( "put key3 value3" );
+  db.ProcessQuery( "put mykey4 value4" );
+  std::cout << "Result is: " << 
+     db.ProcessQuery( "list ke" ) << std::endl; 
   std::cout << "Result is: " << 
      db.ProcessQuery( "list" ) << std::endl; 
 
   return 1;
+*/
 
-/*
+/*/
   db.ProcessQuery( "put key2 valueIsSuperFastAgain" );
   s_result = db.ProcessQuery( "get key2" );
   std::cout << "Result is: " << s_result << std::endl; 

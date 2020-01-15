@@ -119,8 +119,8 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       break;
    }
 
-   std::cout << "Key: " << query_info.sKey.size()  << std::endl;;
-   std::cout << "Value: " << query_info.sValue.size() << std::endl;
+   // std::cout << "Key: " << query_info.sKey.size()  << std::endl;
+   // std::cout << "Value: " << query_info.sValue.size() << std::endl;
 
    return s_ans.value();
 }
@@ -173,25 +173,10 @@ bool DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
 
 std::string DataBase::ProcessListQuery( const QueryInfo &query_info ) const
 {
-   if( query_info.sKey.empty() )
-   {
-      return ListAllKeys();
-   }
-   else
-   {
-      std::cout << "NOT Impelemented yet" << std::endl;
-      return ListKeysWithPrefix( query_info.sKey );
-   }
-
-   return std::string();
+   return ListKeys( query_info.sKey );
 }
    
-std::string DataBase::ListKeysWithPrefix( const std::string& s_prefix ) const
-{
-   return std::string();
-}
-
-std::string DataBase::ListAllKeys() const
+std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ ) const
 {
    namespace fs = std::filesystem;
 
@@ -200,7 +185,7 @@ std::string DataBase::ListAllKeys() const
    for( auto& p: fs::directory_iterator( sPathToDb ) )
    {
       std::string s_path_to_record = p.path();
-      std::cout << p.path() << '\n';
+      // std::cout << p.path() << '\n';
 
       std::ifstream fs( s_path_to_record );  
 
@@ -225,14 +210,11 @@ std::string DataBase::ListAllKeys() const
          continue;
       }
 
-      s_result += s_key;
-      s_result += ' ';
-
-      // if( 0 == s_key.compare( 0, s_prefix.size(), s_prefix ) )
-      // {
-      //    s_result += s_key;
-      //    s_result += ' ';
-      // }
+      if( MatchListQuery( s_prefix, s_key ) )
+      {
+         s_result += s_key;
+         s_result += ' ';
+      }
    }
 
    if( !s_result.empty() )
@@ -240,7 +222,16 @@ std::string DataBase::ListAllKeys() const
       s_result.pop_back();
    }
 
+  // std::cout << "s_result is: " << s_result << std::endl;
   return s_result;
+}
+
+bool DataBase::MatchListQuery( const std::string &s_prefix,
+   const std::string &s_key ) const noexcept
+{
+   if( s_prefix.empty() ) return true;
+
+   return ( 0 == s_key.compare( 0, s_prefix.size(), s_prefix ) );
 }
 
 std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_info ) const
