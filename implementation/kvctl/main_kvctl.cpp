@@ -1,17 +1,9 @@
-//
-// stream_client.cpp
-// ~~~~~~~~~~~~~~~~~
-//
-// Copyright (c) 2003-2010 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
+#include<cstdlib>
+#include<cstring>
+#include<iostream>
 
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include "asio.hpp"
+#include"asio.hpp"
+#include"AppProtocol.h"
 
 #if defined(ASIO_HAS_LOCAL_SOCKETS)
 
@@ -38,25 +30,42 @@ int main(int argc, char* argv[])
 
     using namespace std; // For strlen.
     std::cout << "Enter message: ";
-    char request[max_length];
-    std::cin.getline(request, max_length);
-    size_t request_length = strlen(request);
-    asio::write(s, asio::buffer(request, request_length));
+    std::string s_query;
+
+    std::getline( std::cin, s_query );
+
+    AppProtocol app_protocol;
+    std::vector<BYTE> v_query =
+       app_protocol.encodeMsg( s_query );
+
+    asio::write(s, asio::buffer(v_query, v_query.size()));
 
     char reply[max_length];
-
     asio::error_code ec;
-    size_t reply_length = 0;
+    size_t bytes_read = 0;
+
+    std::vector<byte> v_ans;
 
     while( !ec )
     {
-       reply_length = asio::read(s,
-           asio::buffer(reply, max_length), ec);
+       bytes_read = asio::read(s,
+          asio::buffer(reply, max_length), ec);
+       // append to v_ans
     }
 
-    // std::cout << "Reply is: ";
-    std::cout.write( reply, reply_length );
-    std::cout << "\n";
+    bool status_ok = false;
+    const std::string s_ans = app_protocol.decodeMsg(
+       std::vector<BYTE>( reply, reply  + bytes_read ), status_ok );
+
+    if(status_ok)
+    {
+       std::cout << s_ans << std::endl;
+    }
+    else
+    {
+       std::cout << "Recv wrong message" << std::endl;
+    }
+
   }
   catch (std::exception& e)
   {

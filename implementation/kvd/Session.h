@@ -2,6 +2,7 @@
 #include<iostream>
 
 #include"DataBase.h"
+#include"AppProtocol.h"
 #include"asio.hpp"
 
 using asio::local::stream_protocol;
@@ -41,15 +42,29 @@ public:
   {
     if (!error)
     {
-      const std::string ret = pDataBase->ProcessQuery( std::string( data_.begin(), data_.begin() + bytes_transferred ) ); 
+      bool status_ok = false;
+      const std::string s_query = appProtocol.decodeMsg(
+         std::vector<BYTE>( data_.begin(), data_.begin() + bytes_transferred ), status_ok );
 
-      for (std::size_t i = 0; i < ret.size(); ++i)
-        data_[i] = ret[i];
-      
+      if( ! status_ok )
+      {
+         std::cout << "Received msg is not full" << std::endl;
+         return;
+      }
+      std::cout << "Recv query: " << s_query << std::endl;
+
+      const std::string ret = pDataBase->ProcessQuery( s_query ); 
+      std::cout << "Recv query: " << s_query << std::endl;
+
+      std::vector<BYTE> v_enc_data =
+         appProtocol.encodeMsg( ret );
+
+      for (std::size_t i = 0; i < v_enc_data.size(); ++i)
+        data_[i] = v_enc_data[i];
+
       // std::cout << "Bytes to send: " << ret.size() << std::endl;
-      
       asio::async_write(socket_,
-          asio::buffer(data_, ret.size()),
+          asio::buffer(data_, v_enc_data.size()),
           std::bind(&session::handle_write,
             shared_from_this(),
             std::placeholders::_1));
@@ -82,5 +97,6 @@ private:
 
   // Buffer used to store data received from the client.
   std::array<char, 1024> data_;
+  AppProtocol appProtocol;
 };
 

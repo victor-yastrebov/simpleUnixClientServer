@@ -13,6 +13,7 @@ set(kvctl_headers "")
 set(kvctl_directories "")
 
 #set(directories ${directories} ${CMAKE_CURRENT_LIST_DIR})
+set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/commonLibs/")
 set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/commonLibs/3dparty/asio-1.12.2/include/")
 
 add_definitions(
@@ -44,6 +45,7 @@ set(kvd_headers ${kvd_headers}
    "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Session.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
+   "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.h"
 )
 
 set(kvd_sources ${kvd_sources}
@@ -55,14 +57,16 @@ set(kvd_sources ${kvd_sources}
    #"${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.cpp"
 )
 
-#set(kvctl_headers ${kvctl_headers}
+set(kvctl_headers ${kvctl_headers}
 #   "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.h"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
-#)
+   "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.h"
+)
 
 set(kvctl_sources ${kvctl_sources}
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
@@ -70,6 +74,7 @@ set(kvctl_sources ${kvctl_sources}
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.cpp"
 )
 
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g -lpthread -static -static-libstdc++ -static-libgcc")
