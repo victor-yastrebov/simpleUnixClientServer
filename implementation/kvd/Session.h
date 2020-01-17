@@ -14,7 +14,8 @@ public:
   Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db ) :
     mSocket( io_service ),
     pDataBase( p_db ),
-    sessionIsOverEvent( nullptr )
+    sessionIsOverEvent( nullptr ),
+    stopServerEvent( nullptr )
   {
      std::cout << "session CTOR" << std::endl;
   }
@@ -68,6 +69,13 @@ public:
       }
 
       std::cout << "Recv query: " << s_query << std::endl;
+      // Command for stopping server
+      if( s_query == "exit")
+      {
+         if( stopServerEvent != nullptr ) stopServerEvent();
+         return;
+      }
+
       const std::string ret = pDataBase->ProcessQuery( s_query ); 
 
       std::vector<BYTE> v_enc_data =
@@ -104,6 +112,7 @@ public:
   }
 
    std::function<void()>   sessionIsOverEvent;
+   std::function<void()>   stopServerEvent;
 
 private:
      stream_protocol::socket   mSocket;

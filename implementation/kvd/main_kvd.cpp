@@ -55,6 +55,8 @@ int main(int argc, char* argv[])
     UDSServer s( io_service, argv[1] );
 
     io_service.run();
+
+    std::cout << "Kvd server is terminated" << std::endl;
   }
   catch (std::exception& e)
   {

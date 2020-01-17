@@ -19,15 +19,17 @@
 class UDSServer
 {
 public:
-          UDSServer( asio::io_service& io_service, const std::string& s_sock_fname );
-         ~UDSServer() = default;
-          UDSServer( const UDSServer& ) = delete;
-          UDSServer& operator=( const UDSServer& ) = delete;
-   void   HandleAccept( std::shared_ptr<Session> p_new_session, const asio::error_code& error );
-   void   OnSessionIsOver();
+   UDSServer( asio::io_service& io_service, const std::string& s_sock_fname );
+  ~UDSServer();
+   UDSServer( const UDSServer& ) = delete;
+   UDSServer& operator=( const UDSServer& ) = delete;
 
 private:
-                        void   StartToListenForNewSession();
+                        void   HandleAccept( std::shared_ptr<Session> p_new_session, const asio::error_code& error );
+                        void   StartToListenForNewSession( std::shared_ptr<Session> &p_new_session );
+                        void   SubscribeToEvents( std::shared_ptr<Session> &s );
+                        void   OnSessionIsOver();
+                        void   OnStopServer();
 
             asio::io_service&  asioService;
    stream_protocol::acceptor   asioAcceptor;
