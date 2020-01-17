@@ -1,6 +1,7 @@
 #include<cstdlib>
 #include<cstring>
 #include<iostream>
+#include<vector>
 
 #include"asio.hpp"
 #include"AppProtocol.h"
@@ -26,9 +27,14 @@ int main(int argc, char* argv[])
     std::remove(argv[1]);
     stream_protocol::socket s(io_service, stream_protocol::endpoint( argv[1] ));
 
-    s.connect(stream_protocol::endpoint(argv[2]));
+    asio::error_code ec;
+    s.connect(stream_protocol::endpoint(argv[2]), ec);
+    if( ec )
+    {
+       std::cout << "Connection to server failed. Try again later" << std::endl;
+       return 1;
+    }
 
-    using namespace std; // For strlen.
     std::cout << "Enter message: ";
     std::string s_query;
 
@@ -41,10 +47,9 @@ int main(int argc, char* argv[])
     asio::write(s, asio::buffer(v_query, v_query.size()));
 
     char reply[max_length];
-    asio::error_code ec;
     size_t bytes_read = 0;
 
-    std::vector<byte> v_ans;
+    std::vector<std::byte> v_ans;
 
     while( !ec )
     {

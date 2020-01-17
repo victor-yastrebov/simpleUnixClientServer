@@ -7,67 +7,87 @@
 
 using asio::local::stream_protocol;
 
-class session
-  : public std::enable_shared_from_this<session>
+class Session
+  : public std::enable_shared_from_this<Session>
 {
 public:
-  session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db ) :
-    socket_(io_service),
-    pDataBase( p_db )
+  Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db ) :
+    mSocket( io_service ),
+    pDataBase( p_db ),
+    sessionIsOverEvent( nullptr )
   {
      std::cout << "session CTOR" << std::endl;
   }
 
-  ~session()
+  ~Session()
   {
-     std::cout << "session DTOR" << std::endl;
+      try
+      {
+         std::cout << "session DTOR" << std::endl;
+         if( sessionIsOverEvent != nullptr ) sessionIsOverEvent(); 
+      }
+      catch( std::exception &e )
+      {
+         std::cout << "session DTOR exception caught: " << e.what() << std::endl;
+      }
+      catch( ... )
+      {
+         std::cout << "session DTOR unknown exception caught" << std::endl;
+      }
   }
 
-  stream_protocol::socket& socket()
+  stream_protocol::socket& getSocket()
   {
-    return socket_;
+    return mSocket;
   }
 
-  void start()
+  void Start()
   {
-    socket_.async_read_some(asio::buffer(data_),
-       std::bind(&session::handle_read,
-          shared_from_this(),
-          std::placeholders::_1,
-          std::placeholders::_2));
+     mSocket.async_read_some(
+        asio::buffer( mData ),
+        std::bind( &Session::HandleRead,
+           shared_from_this(),
+           std::placeholders::_1,
+           std::placeholders::_2
+        )
+     );
   }
 
-  void handle_read(const asio::error_code& error,
-      size_t bytes_transferred)
+  void HandleRead( const asio::error_code& error, size_t bytes_transferred )
   {
-    if (!error)
+    if( !error )
     {
       bool status_ok = false;
       const std::string s_query = appProtocol.decodeMsg(
-         std::vector<BYTE>( data_.begin(), data_.begin() + bytes_transferred ), status_ok );
+         std::vector<BYTE>( mData.begin(), mData.begin() + bytes_transferred ), status_ok );
 
       if( ! status_ok )
       {
          std::cout << "Received msg is not full" << std::endl;
          return;
       }
-      std::cout << "Recv query: " << s_query << std::endl;
 
-      const std::string ret = pDataBase->ProcessQuery( s_query ); 
       std::cout << "Recv query: " << s_query << std::endl;
+      const std::string ret = pDataBase->ProcessQuery( s_query ); 
 
       std::vector<BYTE> v_enc_data =
          appProtocol.encodeMsg( ret );
 
       for (std::size_t i = 0; i < v_enc_data.size(); ++i)
-        data_[i] = v_enc_data[i];
+      {
+         mData[i] = v_enc_data[i];
+      }
 
       // std::cout << "Bytes to send: " << ret.size() << std::endl;
-      asio::async_write(socket_,
-          asio::buffer(data_, v_enc_data.size()),
-          std::bind(&session::handle_write,
-            shared_from_this(),
-            std::placeholders::_1));
+      asio::async_write(
+          mSocket,
+          asio::buffer( mData, v_enc_data.size() ),
+          std::bind(
+             &Session::HandleWrite,
+             shared_from_this(),
+             std::placeholders::_1
+          )
+      );
     }
     else
     {
@@ -75,28 +95,19 @@ public:
     }
   }
 
-  void handle_write(const asio::error_code& error)
+  void HandleWrite( const asio::error_code& error )
   {
-    // std::cout << "handle write ec: " << error << std::endl;
-    if (!error)
+    if( error )
     {
-/*
-      socket_.async_read_some(asio::buffer(data_),
-          std::bind(&session::handle_read,
-            shared_from_this(),
-            std::placeholders::_1,
-            std::placeholders::_2));
-*/
+       std::cout << "handle write ec: " << error << std::endl;
     }
   }
 
+   std::function<void()>   sessionIsOverEvent;
+
 private:
-  // The socket used to communicate with the client.
-  stream_protocol::socket socket_;
-  std::shared_ptr<DataBase> pDataBase;
-
-  // Buffer used to store data received from the client.
-  std::array<char, 1024> data_;
-  AppProtocol appProtocol;
-};
-
+     stream_protocol::socket   mSocket;
+   std::shared_ptr<DataBase>   pDataBase;
+      std::array<char, 1024>   mData;
+                 AppProtocol   appProtocol;
+}; 
