@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
     io_service.run();
 
-    std::cout << "Kvd server is terminated" << std::endl;
+    std::cout << "After io_service.run()" << std::endl;
   }
   catch (std::exception& e)
   {

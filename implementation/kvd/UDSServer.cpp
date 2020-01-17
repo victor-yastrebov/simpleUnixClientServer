@@ -17,14 +17,14 @@
 UDSServer::UDSServer( asio::io_service& io_service, const std::string& s_sock_fname ) :
    asioService( io_service ),
    asioAcceptor( io_service, stream_protocol::endpoint( s_sock_fname ) ),
-   nMaxOnlineUsers( 1 ),
-   numOnlineUsers( 0 )
+   nMaxOnlineUsers( 2 ),
+   numOnlineUsers( 0 ),
+   curSessionId( 0 ),
+   pDataBase( std::make_shared<DataBase>() ),
+   pCurSession( nullptr ),
+   bServerIsStopped( false )
 {
-   pDataBase = std::make_shared<DataBase>();
-
-   std::shared_ptr<Session> p_new_session =
-      std::make_shared<Session>( asioService, pDataBase );
-   StartToListenForNewSession( p_new_session );
+   StartToListenForNewSession();
 }
 
 /**
@@ -32,6 +32,21 @@ UDSServer::UDSServer( asio::io_service& io_service, const std::string& s_sock_fn
  */
 UDSServer::~UDSServer()
 {
+   // reset session that is wating for the incoming connection
+   pCurSession.reset();
+
+   // stop all active connections
+   for( auto &p : umSessions )
+   {
+      std::cout << "Inside cycle" << std::endl;
+      std::shared_ptr<Session> p_sp = p.second.lock();
+      if( p_sp )
+      {
+         std::cout << "Reset" << std::endl;
+         p_sp.reset();
+      }
+   }
+
    std::cout << "UDSServer DTOR" << std::endl;
 }
 
@@ -39,16 +54,21 @@ UDSServer::~UDSServer()
  * Create and intialize new session for communication with
  * client socket
  */
-void UDSServer::StartToListenForNewSession(
-   std::shared_ptr<Session> &p_new_session )
+void UDSServer::StartToListenForNewSession()
 {
-   SubscribeToEvents( p_new_session );
+   std::cout << "StartToListenForNewSession()" << std::endl;
+   pCurSession = std::make_shared<Session>(
+      asioService, pDataBase, curSessionId );
+    
+   ++curSessionId;
+
+   SubscribeToEvents( pCurSession );
 
    asioAcceptor.async_accept(
-      p_new_session->getSocket(),
+      pCurSession->getSocket(),
       std::bind(
          &UDSServer::HandleAccept, this,
-         p_new_session, std::placeholders::_1
+         pCurSession, std::placeholders::_1
       )
    );
 }
@@ -79,6 +99,7 @@ void UDSServer::HandleAccept( std::shared_ptr<Session> p_new_session, const asio
    else
    {
       numOnlineUsers.fetch_add( 1 );
+      umSessions.insert( std::make_pair( p_new_session->getId(), p_new_session ) ); 
       p_new_session->Start();
    }
 
@@ -86,9 +107,7 @@ void UDSServer::HandleAccept( std::shared_ptr<Session> p_new_session, const asio
    if( numOnlineUsers.load() < nMaxOnlineUsers )
    {
       std::cout << "Start new session" << std::endl; 
-
-      p_new_session.reset( new Session( asioService, pDataBase ));
-      StartToListenForNewSession( p_new_session );
+      StartToListenForNewSession();
    }
 
 }
@@ -102,11 +121,12 @@ void UDSServer::OnSessionIsOver()
    std::cout << "Num online users: " <<
       numOnlineUsers.load() << std::endl;
 
-   if( numOnlineUsers.load() < nMaxOnlineUsers )
+   // TODO: remove from umSessions
+
+   if( ! bServerIsStopped.load() &&
+       numOnlineUsers.load() + 1 == nMaxOnlineUsers )
    {
-      std::shared_ptr<Session> p_session =
-         std::make_shared<Session>( asioService, pDataBase );
-      StartToListenForNewSession( p_session );
+      StartToListenForNewSession();
    }
 }
 
@@ -115,11 +135,7 @@ void UDSServer::OnSessionIsOver()
  */
 void UDSServer::OnStopServer()
 {
-   std::cout << "Receive stop server command" << std::endl;
+   std::cout << "UDSServer(): receive stop server command" << std::endl;
+   bServerIsStopped.store( true );
    asioService.stop();
-
-   // while( numOnlineUsers.load() != 0 )
-   // {
-   //    std::this_thread::yield();
-   // }
 }

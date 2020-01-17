@@ -11,30 +11,31 @@ class Session
   : public std::enable_shared_from_this<Session>
 {
 public:
-  Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db ) :
+  Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db, const size_t id ) :
     mSocket( io_service ),
     pDataBase( p_db ),
     sessionIsOverEvent( nullptr ),
-    stopServerEvent( nullptr )
+    stopServerEvent( nullptr ),
+    nId( id )
   {
-     std::cout << "session CTOR" << std::endl;
+     std::cout << "session CTOR with id: " << getId() << std::endl;
   }
 
   ~Session()
   {
-      try
-      {
-         std::cout << "session DTOR" << std::endl;
-         if( sessionIsOverEvent != nullptr ) sessionIsOverEvent(); 
-      }
-      catch( std::exception &e )
-      {
-         std::cout << "session DTOR exception caught: " << e.what() << std::endl;
-      }
-      catch( ... )
-      {
-         std::cout << "session DTOR unknown exception caught" << std::endl;
-      }
+     try
+     {
+        std::cout << "session DTOR for id: " << getId() << std::endl;
+        SessionIsOverNotify();
+     }
+     catch( std::exception &e )
+     {
+        std::cout << "session DTOR exception caught: " << e.what() << std::endl;
+     }
+     catch( ... )
+     {
+        std::cout << "session DTOR unknown exception caught" << std::endl;
+     }
   }
 
   stream_protocol::socket& getSocket()
@@ -72,7 +73,7 @@ public:
       // Command for stopping server
       if( s_query == "exit")
       {
-         if( stopServerEvent != nullptr ) stopServerEvent();
+         StopServerNotify();
          return;
       }
 
@@ -93,7 +94,8 @@ public:
           std::bind(
              &Session::HandleWrite,
              shared_from_this(),
-             std::placeholders::_1
+             std::placeholders::_1,
+             std::placeholders::_2
           )
       );
     }
@@ -103,13 +105,25 @@ public:
     }
   }
 
-  void HandleWrite( const asio::error_code& error )
+  void HandleWrite( const asio::error_code& error, std::size_t bytes_transferred )
   {
     if( error )
     {
-       std::cout << "handle write ec: " << error << std::endl;
+       std::cout << "HandleWrite() error: " << error << std::endl;
     }
   }
+
+  void SessionIsOverNotify()
+  {
+      if( sessionIsOverEvent != nullptr ) sessionIsOverEvent();
+  }
+
+  void StopServerNotify()
+  {
+      if( stopServerEvent != nullptr ) stopServerEvent();
+  }
+
+  size_t getId() const noexcept { return nId; }
 
    std::function<void()>   sessionIsOverEvent;
    std::function<void()>   stopServerEvent;
@@ -119,4 +133,5 @@ private:
    std::shared_ptr<DataBase>   pDataBase;
       std::array<char, 1024>   mData;
                  AppProtocol   appProtocol;
+                      size_t   nId;
 }; 
