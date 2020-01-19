@@ -25,7 +25,7 @@ public:
   {
      try
      {
-        std::cout << "session DTOR for id: " << getId() << std::endl;
+        std::cout << "session DTOR with id: " << getId() << std::endl;
         SessionIsOverNotify();
      }
      catch( std::exception &e )

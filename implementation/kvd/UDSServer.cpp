@@ -17,7 +17,7 @@
 UDSServer::UDSServer( asio::io_service& io_service, const std::string& s_sock_fname ) :
    asioService( io_service ),
    asioAcceptor( io_service, stream_protocol::endpoint( s_sock_fname ) ),
-   nMaxOnlineUsers( 2 ),
+   nMaxOnlineUsers( 1 ),
    numOnlineUsers( 0 ),
    curSessionId( 0 ),
    pDataBase( std::make_shared<DataBase>() ),
@@ -32,8 +32,11 @@ UDSServer::UDSServer( asio::io_service& io_service, const std::string& s_sock_fn
  */
 UDSServer::~UDSServer()
 {
+   std::cout << "UDSServer DTOR start: use_count() for id: " << pCurSession->getId() <<  pCurSession.use_count()<< std::endl;
    // reset session that is wating for the incoming connection
    pCurSession.reset();
+   std::cout << "UDSServer DTOR middle: use_count(): " <<  pCurSession.use_count()<< std::endl;
+
 
    // stop all active connections
    for( auto &p : umSessions )
@@ -47,7 +50,7 @@ UDSServer::~UDSServer()
       }
    }
 
-   std::cout << "UDSServer DTOR" << std::endl;
+   std::cout << "UDSServer DTOR end" << std::endl;
 }
 
 /**
@@ -56,9 +59,9 @@ UDSServer::~UDSServer()
  */
 void UDSServer::StartToListenForNewSession()
 {
-   std::cout << "StartToListenForNewSession()" << std::endl;
    pCurSession = std::make_shared<Session>(
       asioService, pDataBase, curSessionId );
+   std::cout << "StartToListenForNewSession() 1: use_count()" << pCurSession.use_count() << std::endl;
     
    ++curSessionId;
 
@@ -71,6 +74,7 @@ void UDSServer::StartToListenForNewSession()
          pCurSession, std::placeholders::_1
       )
    );
+   std::cout << "StartToListenForNewSession() 2: use_count()" << pCurSession.use_count() << std::endl;
 }
 
 /**
@@ -92,7 +96,7 @@ void UDSServer::SubscribeToEvents( std::shared_ptr<Session> &s )
  */
 void UDSServer::HandleAccept( std::shared_ptr<Session> p_new_session, const asio::error_code& error )
 {
-   std::cout << "HandleAccept() fired" << std::endl; 
+   // std::cout << "HandleAccept() fired" << std::endl; 
    if( error )
    {
       std::cout << "HandleAccept() error occured: " 
@@ -119,6 +123,8 @@ void UDSServer::HandleAccept( std::shared_ptr<Session> p_new_session, const asio
  */
 void UDSServer::OnSessionIsOver( const size_t n_sess_id )
 {
+   std::cout << "OnSessionIsOver() start for: " << n_sess_id << std::endl;
+
    numOnlineUsers.fetch_sub( 1 );
    std::cout << "Num online users: " <<
       numOnlineUsers.load() << std::endl;
@@ -131,6 +137,7 @@ void UDSServer::OnSessionIsOver( const size_t n_sess_id )
    {
       StartToListenForNewSession();
    }
+   std::cout << "OnSessionIsOver() end for " << n_sess_id << std::endl;
 }
 
 /**
