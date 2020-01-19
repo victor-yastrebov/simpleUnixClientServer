@@ -115,7 +115,10 @@ public:
 
   void SessionIsOverNotify()
   {
-      if( sessionIsOverEvent != nullptr ) sessionIsOverEvent();
+      if( sessionIsOverEvent != nullptr )
+      {
+         sessionIsOverEvent( getId() );
+      }
   }
 
   void StopServerNotify()
@@ -125,8 +128,8 @@ public:
 
   size_t getId() const noexcept { return nId; }
 
-   std::function<void()>   sessionIsOverEvent;
-   std::function<void()>   stopServerEvent;
+   std::function<void(int)>   sessionIsOverEvent;
+      std::function<void()>   stopServerEvent;
 
 private:
      stream_protocol::socket   mSocket;

@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
     std::remove( argv[1] );
     UDSServer s( io_service, argv[1] );
 
+    // move to class member and use .Run() method instead
     io_service.run();
 
     std::cout << "After io_service.run()" << std::endl;

@@ -78,8 +78,10 @@ void UDSServer::StartToListenForNewSession()
  */
 void UDSServer::SubscribeToEvents( std::shared_ptr<Session> &s )
 {
-   s->sessionIsOverEvent =
-      std::bind( &UDSServer::OnSessionIsOver, this );
+   s->sessionIsOverEvent = std::bind(
+      &UDSServer::OnSessionIsOver, this,
+      std::placeholders::_1
+   );
 
    s->stopServerEvent =
       std::bind( &UDSServer::OnStopServer, this );
@@ -115,13 +117,14 @@ void UDSServer::HandleAccept( std::shared_ptr<Session> p_new_session, const asio
 /**
  * Process session is over event
  */
-void UDSServer::OnSessionIsOver()
+void UDSServer::OnSessionIsOver( const size_t n_sess_id )
 {
    numOnlineUsers.fetch_sub( 1 );
    std::cout << "Num online users: " <<
       numOnlineUsers.load() << std::endl;
 
-   // TODO: remove from umSessions
+   // this session is not longer valid 
+   umSessions.erase( n_sess_id );
 
    if( ! bServerIsStopped.load() &&
        numOnlineUsers.load() + 1 == nMaxOnlineUsers )

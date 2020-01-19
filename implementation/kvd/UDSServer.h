@@ -29,7 +29,7 @@ private:
                         void   HandleAccept( std::shared_ptr<Session> p_new_session, const asio::error_code& error );
                         void   StartToListenForNewSession();
                         void   SubscribeToEvents( std::shared_ptr<Session> &s );
-                        void   OnSessionIsOver();
+                        void   OnSessionIsOver( const size_t n_sess_id );
                         void   OnStopServer();
 
             asio::io_service&  asioService;
