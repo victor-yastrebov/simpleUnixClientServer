@@ -53,8 +53,10 @@ int main(int argc, char* argv[])
 
     while( !ec )
     {
+       std::cout << "Before read: " << std::endl;
        bytes_read = asio::read(s,
           asio::buffer(reply, max_length), ec);
+       std::cout << "After read: " << bytes_read << " bytes" << std::endl;
        // append to v_ans
     }
 

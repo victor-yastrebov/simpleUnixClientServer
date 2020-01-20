@@ -79,30 +79,39 @@ public:
 
       const std::string ret = pDataBase->ProcessQuery( s_query ); 
 
-      std::vector<BYTE> v_enc_data =
-         appProtocol.encodeMsg( ret );
-
-      for (std::size_t i = 0; i < v_enc_data.size(); ++i)
-      {
-         mData[i] = v_enc_data[i];
-      }
-
-      // std::cout << "Bytes to send: " << ret.size() << std::endl;
-      asio::async_write(
-          mSocket,
-          asio::buffer( mData, v_enc_data.size() ),
-          std::bind(
-             &Session::HandleWrite,
-             shared_from_this(),
-             std::placeholders::_1,
-             std::placeholders::_2
-          )
-      );
+      SendMsg( ret );
     }
     else
     {
        std::cout << "handle_read error: " << error << std::endl;
     }
+  }
+
+  void SendMsg( const std::string &s_msg )
+  {
+     std::vector<BYTE> v_enc_data =
+        appProtocol.encodeMsg( s_msg );
+
+     for( std::size_t i = 0; i < v_enc_data.size(); ++i )
+     {
+        mData[i] = v_enc_data[i];
+     }
+
+     std::cout << "Bytes to send: " << v_enc_data.size() << std::endl;
+     // std::cout << "Before: " << mSocket.get_io_service().stopped() << std::endl;
+     // mSocket.get_io_service().reset();
+
+     // std::cout << "After: " << mSocket.get_io_service().stopped() << std::endl;
+     asio::async_write(
+         mSocket,
+         asio::buffer( mData, v_enc_data.size() ),
+         std::bind(
+            &Session::HandleWrite,
+            shared_from_this(),
+            std::placeholders::_1,
+            std::placeholders::_2
+         )
+     );
   }
 
   void HandleWrite( const asio::error_code& error, std::size_t bytes_transferred )
@@ -111,6 +120,12 @@ public:
     {
        std::cout << "HandleWrite() error: " << error << std::endl;
     }
+
+    asio::error_code ec;
+    mSocket.shutdown( asio::local::stream_protocol::socket::shutdown_both, ec);
+    mSocket.close( ec );
+
+    std::cout << "HandleWrite end: " << bytes_transferred << "ec: " << error << std::endl;
   }
 
   void SessionIsOverNotify()

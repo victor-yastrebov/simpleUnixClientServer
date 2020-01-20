@@ -52,10 +52,13 @@ int main(int argc, char* argv[])
     asio::io_service io_service;
 
     std::remove( argv[1] );
-    UDSServer s( io_service, argv[1] );
+    UDSServer s( argv[1] );
+    s.Run();
+
+    int ii = 0;
 
     // move to class member and use .Run() method instead
-    io_service.run();
+    // io_service.run();
 
     std::cout << "After io_service.run()" << std::endl;
   }
