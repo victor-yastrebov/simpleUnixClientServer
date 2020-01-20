@@ -21,7 +21,7 @@ Session::Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db,
     stopServerEvent( nullptr ),
     nId( id )
   {
-     std::cout << "session CTOR with id: " << getId() << std::endl;
+     std::cout << "session CTOR with id: " << GetId() << std::endl;
   }
 
 /**
@@ -31,7 +31,7 @@ Session::~Session()
 {
    try
    {
-      std::cout << "session DTOR with id: " << getId() << std::endl;
+      std::cout << "session DTOR with id: " << GetId() << std::endl;
 
       asio::error_code ec;
       mSocket.shutdown( asio::local::stream_protocol::socket::shutdown_both, ec);
@@ -52,7 +52,7 @@ Session::~Session()
 /**
  * Session socket getter
  */
-local_str_proto::socket& Session::getSocket()
+local_str_proto::socket& Session::GetSocket()
 {
    return mSocket;
 }
@@ -62,14 +62,19 @@ local_str_proto::socket& Session::getSocket()
  */
 void Session::Start()
 {
-  mSocket.async_read_some(
-     asio::buffer( mData ),
-     std::bind( &Session::HandleRead,
-        shared_from_this(),
-        std::placeholders::_1,
-        std::placeholders::_2
-     )
-  );
+   AddReceiveDataWork();
+}
+
+void Session::AddReceiveDataWork()
+{
+    mSocket.async_read_some(
+       asio::buffer( mData ),
+       std::bind( &Session::HandleRead,
+          shared_from_this(),
+          std::placeholders::_1,
+          std::placeholders::_2
+       )
+    );
 }
 
 /**
@@ -79,13 +84,17 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
 {
    if( !error )
    {
+      std::cout << "Recv: " << bytes_transferred << std::endl;
+      vFullMsg.insert( vFullMsg.end(), mData.begin(), mData.begin() + bytes_transferred );
+
       bool status_ok = false;
       const std::string s_query = appProtocol.decodeMsg(
-         std::vector<BYTE>( mData.begin(), mData.begin() + bytes_transferred ), status_ok );
+         vFullMsg, status_ok );
 
       if( ! status_ok )
       {
          std::cout << "Received msg is not full" << std::endl;
+         AddReceiveDataWork();
          return;
       }
 
@@ -112,22 +121,14 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
  */
 void Session::SendMsg( const std::string &s_msg )
 {
-   std::vector<BYTE> v_enc_data =
-      appProtocol.encodeMsg( s_msg );
+   // we can send up to 64 kB per one async_write(): https://sourceforge.net/p/asio/mailman/message/23580095/
+   vFullMsg = appProtocol.encodeMsg( s_msg );
 
-   for( std::size_t i = 0; i < v_enc_data.size(); ++i )
-   {
-      mData[i] = v_enc_data[i];
-   }
-
-   std::cout << "Bytes to send: " << v_enc_data.size() << std::endl;
+   std::cout << "Bytes to send: " << vFullMsg.size() << std::endl;
    // std::cout << "Before: " << mSocket.get_io_service().stopped() << std::endl;
-   // mSocket.get_io_service().reset();
-
-   // std::cout << "After: " << mSocket.get_io_service().stopped() << std::endl;
    asio::async_write(
       mSocket,
-      asio::buffer( mData, v_enc_data.size() ),
+      asio::buffer( vFullMsg ),
       std::bind(
          &Session::HandleWrite,
          shared_from_this(),
@@ -157,7 +158,7 @@ void Session::SessionIsOverNotify()
 {
    if( sessionIsOverEvent != nullptr )
    {
-      sessionIsOverEvent( getId() );
+      sessionIsOverEvent( GetId() );
    }
 }
 
@@ -172,7 +173,7 @@ void Session::StopServerNotify()
 /**
  * Get session id
  */
-size_t Session::getId() const noexcept
+size_t Session::GetId() const noexcept
 {
    return nId;
 }

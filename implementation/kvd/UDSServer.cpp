@@ -82,7 +82,7 @@ void UDSServer::StartToListenForNewSession()
    SubscribeToEvents( pCurSession );
 
    asioAcceptor.async_accept(
-      pCurSession->getSocket(),
+      pCurSession->GetSocket(),
       std::bind(
          &UDSServer::HandleAccept, this, std::placeholders::_1
       )
@@ -121,7 +121,7 @@ void UDSServer::HandleAccept( const asio::error_code& error )
       numOnlineUsers.fetch_add( 1 );
       {
          std::scoped_lock lock( mutSessions );
-         umSessions.insert( std::make_pair( pCurSession->getId(), pCurSession ) );
+         umSessions.insert( std::make_pair( pCurSession->GetId(), pCurSession ) );
       }
       pCurSession->Start();
    }

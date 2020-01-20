@@ -26,9 +26,9 @@ public:
                                        std::shared_ptr<DataBase> &p_db,
                                        const size_t id );
                              ~Session();
-   local_str_proto::socket&  getSocket();
+   local_str_proto::socket&  GetSocket();
                       void   Start();
-                    size_t   getId() const noexcept;
+                    size_t   GetId() const noexcept;
 
    std::function<void(int)>   sessionIsOverEvent;
       std::function<void()>   stopServerEvent;
@@ -39,10 +39,14 @@ private:
       void   SendMsg( const std::string &s_msg );
       void   HandleRead( const asio::error_code& error, size_t bytes_transferred );
       void   HandleWrite( const asio::error_code& error, std::size_t bytes_transferred );
+      void   AddReceiveDataWork();
 
      local_str_proto::socket   mSocket;
    std::shared_ptr<DataBase>   pDataBase;
       std::array<char, 1024>   mData;
                  AppProtocol   appProtocol;
                       size_t   nId;
+           std::vector<BYTE>   vFullMsg;
+                         // int   numBytesToSend;
+                         // int   numSentBytes;
 };

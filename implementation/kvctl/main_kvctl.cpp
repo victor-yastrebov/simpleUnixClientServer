@@ -10,8 +10,6 @@
 
 using asio::local::stream_protocol;
 
-enum { max_length = 1024 };
-
 int main(int argc, char* argv[])
 {
   try
@@ -24,8 +22,8 @@ int main(int argc, char* argv[])
 
     asio::io_service io_service;
 
-    std::remove(argv[1]);
-    stream_protocol::socket s(io_service, stream_protocol::endpoint( argv[1] ));
+    std::remove( argv[1] );
+    stream_protocol::socket s( io_service, stream_protocol::endpoint( argv[1] ) );
 
     asio::error_code ec;
     s.connect(stream_protocol::endpoint(argv[2]), ec);
@@ -44,25 +42,27 @@ int main(int argc, char* argv[])
     std::vector<BYTE> v_query =
        app_protocol.encodeMsg( s_query );
 
-    asio::write(s, asio::buffer(v_query, v_query.size()));
+    asio::write( s, asio::buffer( v_query, v_query.size() ) );
 
-    char reply[max_length];
+    const size_t buf_size = 4;
+    std::vector<BYTE> v_buf;
+    v_buf.resize( buf_size );
+
     size_t bytes_read = 0;
 
-    std::vector<std::byte> v_ans;
+    std::vector<BYTE> v_full_msg;
 
     while( !ec )
     {
-       std::cout << "Before read: " << std::endl;
-       bytes_read = asio::read(s,
-          asio::buffer(reply, max_length), ec);
-       std::cout << "After read: " << bytes_read << " bytes" << std::endl;
-       // append to v_ans
+       bytes_read = asio::read( s, asio::buffer( v_buf ), ec );
+       // std::cout << "After read: " << bytes_read << " bytes" << std::endl;
+       v_full_msg.insert( v_full_msg.end(),
+          v_buf.begin(), v_buf.begin() + bytes_read );
     }
 
     bool status_ok = false;
     const std::string s_ans = app_protocol.decodeMsg(
-       std::vector<BYTE>( reply, reply  + bytes_read ), status_ok );
+       v_full_msg, status_ok );
 
     if(status_ok)
     {
