@@ -12,10 +12,13 @@
 #include<string>
 #include<string_view>
 #include<unordered_map>
+#include<mutex>
 
 #include"DataBase.h"
 #include"Session.h"
 #include"asio.hpp"
+
+using wptr_sess_um = std::unordered_map<size_t, std::weak_ptr<Session>>;
 
 class UDSServer
 {
@@ -40,7 +43,8 @@ private:
     std::atomic<std::size_t>   numOnlineUsers;
 
                       size_t   curSessionId;
-   std::unordered_map<size_t, std::weak_ptr<Session>>   umSessions;
+                  std::mutex   mutSessions;
+                wptr_sess_um   umSessions;
     std::shared_ptr<Session>   pCurSession;
            std::atomic<bool>   bServerIsStopped;
 };

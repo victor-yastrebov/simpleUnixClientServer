@@ -26,6 +26,12 @@ public:
      try
      {
         std::cout << "session DTOR with id: " << getId() << std::endl;
+
+        asio::error_code ec;
+        mSocket.shutdown(
+           asio::local::stream_protocol::socket::shutdown_both, ec);
+        mSocket.close( ec );
+
         SessionIsOverNotify();
      }
      catch( std::exception &e )
@@ -120,10 +126,6 @@ public:
     {
        std::cout << "HandleWrite() error: " << error << std::endl;
     }
-
-    asio::error_code ec;
-    mSocket.shutdown( asio::local::stream_protocol::socket::shutdown_both, ec);
-    mSocket.close( ec );
 
     std::cout << "HandleWrite end: " << bytes_transferred << "ec: " << error << std::endl;
   }
