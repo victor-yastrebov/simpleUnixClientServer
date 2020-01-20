@@ -37,11 +37,10 @@ private:
                         void   OnStopServer();
 
             asio::io_service   asioService;
-   stream_protocol::acceptor   asioAcceptor;
+   local_str_proto::acceptor   asioAcceptor;
    std::shared_ptr<DataBase>   pDataBase;
                 const size_t   nMaxOnlineUsers;
     std::atomic<std::size_t>   numOnlineUsers;
-
                       size_t   curSessionId;
                   std::mutex   mutSessions;
                 wptr_sess_um   umSessions;

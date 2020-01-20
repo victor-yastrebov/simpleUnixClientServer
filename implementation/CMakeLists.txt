@@ -57,7 +57,7 @@ set(kvd_sources ${kvd_sources}
    #"${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
-  # "${CMAKE_CURRENT_LIST_DIR}/kvd/Session.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/kvd/Session.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.cpp"
 )
 

@@ -15,7 +15,7 @@
  * CTOR
  */
 UDSServer::UDSServer(  const std::string& s_sock_fname ) :
-   asioAcceptor( asioService, stream_protocol::endpoint( s_sock_fname ) ),
+   asioAcceptor( asioService, local_str_proto::endpoint( s_sock_fname ) ),
    nMaxOnlineUsers( 4096 ),
    numOnlineUsers( 0 ),
    curSessionId( 0 ),
