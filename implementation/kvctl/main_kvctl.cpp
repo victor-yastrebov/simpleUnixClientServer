@@ -12,6 +12,9 @@ using asio::local::stream_protocol;
 
 int main(int argc, char* argv[])
 {
+
+  int ret_code = 0;
+
   try
   {
     if (argc != 3)
@@ -55,7 +58,6 @@ int main(int argc, char* argv[])
     while( !ec )
     {
        bytes_read = asio::read( s, asio::buffer( v_buf ), ec );
-       // std::cout << "After read: " << bytes_read << " bytes" << std::endl;
        v_full_msg.insert( v_full_msg.end(),
           v_buf.begin(), v_buf.begin() + bytes_read );
     }
@@ -64,22 +66,37 @@ int main(int argc, char* argv[])
     const std::string s_ans = app_protocol.decodeMsg(
        v_full_msg, status_ok );
 
-    if(status_ok)
+    if( status_ok )
     {
-       std::cout << s_ans << std::endl;
+       // it will be more accurate to pass query status in AppProtocol msg
+       const std::string s_dummy_ok_pattern = "Query OK";
+       if( s_ans != s_dummy_ok_pattern ) std::cout << s_ans << std::endl;
+
+       const std::string s_failure_pattern = "kvctl:";
+       const bool has_failure_pattern =
+          ( 0 == s_ans.compare( 0, s_failure_pattern.size(), s_failure_pattern ) );
+
+       ret_code = has_failure_pattern;
     }
     else
     {
        std::cout << "Recv wrong message" << std::endl;
+       ret_code = 1;
     }
 
   }
-  catch (std::exception& e)
+  catch( std::exception& e )
   {
-    std::cerr << "Exception: " << e.what() << "\n";
+    std::cout << "Exception: " << e.what() << std::endl;
+    ret_code = 1;
+  }
+  catch( ... )
+  {
+     std::cout << "Unknow exception type" << std::endl;
+     ret_code = 1;
   }
 
-  return 0;
+  return ret_code;
 }
 
 #else // defined(ASIO_HAS_LOCAL_SOCKETS)

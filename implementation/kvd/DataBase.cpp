@@ -96,24 +96,50 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
    switch( query_info.eType )
    {
    case eQueryType::qtLIST:
-      // s_ans = "bar baz max tRex";
       s_ans = ProcessListQuery( query_info );
+      if( s_ans && s_ans.value().empty() )
+      {
+         s_ans = "kvctl: no any keys";
+      }
       break;
    case eQueryType::qtPUT:
-      s_ans = "PUT query OK";
-      ProcessPutQuery( query_info );
+   {
+      const bool status_ok = ProcessPutQuery( query_info );
+      if( status_ok )
+      {
+         s_ans = "Query OK";
+      }
+      else
+      {
+         std::stringstream ss;
+         ss << "kvctl: put key error ";
+         ss << "\"" << query_info.sKey +"\"";
+         s_ans = ss.str();
+      }
       break;
+   }
    case eQueryType::qtGET:
       s_ans = ProcessGetQuery( query_info );
       if( ! s_ans )
       {
-         s_ans = "Not found";
+         std::stringstream ss;
+         ss << "kvctl: no key ";
+         ss << "\"" << query_info.sKey +"\"";
+         s_ans = ss.str();
       }
       break;
    case eQueryType::qtERASE:
-      s_ans = "ERASE query OK";
-      ProcessEraseQuery( query_info );
+   {
+      const bool status_ok = ProcessEraseQuery( query_info );
+      if( ! status_ok)
+      {
+         std::stringstream ss;
+         ss << "kvctl: no key ";
+         ss << "\"" << query_info.sKey +"\"";
+         s_ans = ss.str();
+      }
       break;
+   }
    default:
       s_ans = "UNKNOWN_CMD";
       break;
@@ -147,6 +173,17 @@ size_t DataBase::Hash( const std::string& s) const noexcept
 
 bool DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
 {
+/*
+   if( query_info.sKey.empty() )
+   {
+      // remove all
+   }
+   else
+   {
+      // remove
+   }
+*/
+
    const size_t str_hash = Hash( query_info.sKey );
    const std::string s_path_to_record = sPathToDb + "//" + std::to_string( str_hash );
 
@@ -213,7 +250,7 @@ std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ 
       if( MatchListQuery( s_prefix, s_key ) )
       {
          s_result += s_key;
-         s_result += ' ';
+         s_result += '\n';
       }
    }
 
@@ -295,6 +332,11 @@ bool DataBase::ProcessPutQuery( const QueryInfo &query_info ) const
    of << b_row_is_not_deleted << std::endl;
    of << query_info.sValue.size() << std::endl;
    of << query_info.sValue;
+
+   if( of.bad() )
+   {
+      return false;
+   }
 
    return true;
 }
