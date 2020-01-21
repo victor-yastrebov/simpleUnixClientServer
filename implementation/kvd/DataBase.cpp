@@ -99,7 +99,7 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       s_ans = ProcessListQuery( query_info );
       if( s_ans && s_ans.value().empty() )
       {
-         s_ans = "kvctl: no any keys";
+         s_ans = "Query OK";
       }
       break;
    case eQueryType::qtPUT:
