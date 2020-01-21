@@ -10,36 +10,68 @@
 
 using asio::local::stream_protocol;
 
-int main(int argc, char* argv[])
+/**
+ * Print application usage
+ */
+void printHelp()
 {
+   std::cout << "Client for database by va.yastrebov." << std::endl;
+   std::cout << "Usage examples: " << std::endl;
+   std::cout << " - PUT <key> <value>" << std::endl;
+   std::cout << " - GET <key>" << std::endl;
+   std::cout << " - ERASE [key]" << std::endl;
+   std::cout << " - LIST [prefix]" << std::endl;
+}
 
+/**
+ * Create query string from input CLI args
+ */
+std::string getQuery( const int argc, const char *const argv[] )
+{
+   std::stringstream ss;
+   for( int i = 1; i < argc; ++i)
+   {
+      ss << argv[i] << " ";
+   }
+
+   std::string s_query = ss.str();
+   if( argc > 1 )
+   {
+      // s_query.pop_back();
+      s_query.resize( s_query.size() - 1 );
+   }
+
+   return s_query;
+}
+
+int main( int argc, char* argv[] )
+{
   int ret_code = 0;
 
   try
   {
-    if (argc != 3)
+    const std::string s_query = getQuery( argc, argv );
+
+    if( s_query.empty() )
     {
-      std::cerr << "Usage: stream_client <client_sock> <server_sock>\n";
-      return 1;
-    }
-
-    asio::io_service io_service;
-
-    std::remove( argv[1] );
-    stream_protocol::socket s( io_service, stream_protocol::endpoint( argv[1] ) );
-
-    asio::error_code ec;
-    s.connect(stream_protocol::endpoint(argv[2]), ec);
-    if( ec )
-    {
-       std::cout << "Connection to server failed. Try again later" << std::endl;
+       printHelp();
        return 1;
     }
 
-    std::cout << "Enter message: ";
-    std::string s_query;
+    asio::io_service io_service;
+    const std::string s_server_sock_file( "/tmp/server.sock" );
+    const std::string s_client_sock_file( "/tmp/client4.sock" );
 
-    std::getline( std::cin, s_query );
+    std::remove( s_client_sock_file.c_str() );
+    stream_protocol::socket s( io_service, stream_protocol::endpoint( s_client_sock_file ) );
+
+    asio::error_code ec;
+    s.connect( stream_protocol::endpoint( s_server_sock_file.c_str() ), ec );
+    if( ec )
+    {
+       std::cout << "Connection to server failed: " << ec << std::endl;
+       return 1;
+    }
 
     AppProtocol app_protocol;
     std::vector<BYTE> v_query =
