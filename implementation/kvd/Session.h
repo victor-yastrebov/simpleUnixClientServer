@@ -47,6 +47,5 @@ private:
                  AppProtocol   appProtocol;
                       size_t   nId;
            std::vector<BYTE>   vFullMsg;
-                         // int   numBytesToSend;
-                         // int   numSentBytes;
+                        bool   isWaitingForConnection;
 };

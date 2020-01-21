@@ -19,10 +19,11 @@ Session::Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db,
     pDataBase( p_db ),
     sessionIsOverEvent( nullptr ),
     stopServerEvent( nullptr ),
-    nId( id )
-  {
-     std::cout << "session CTOR with id: " << GetId() << std::endl;
-  }
+    nId( id ),
+    isWaitingForConnection( true )
+{
+   std::cout << "session CTOR with id: " << GetId() << std::endl;
+}
 
 /**
  * DTOR
@@ -37,7 +38,7 @@ Session::~Session()
       mSocket.shutdown( asio::local::stream_protocol::socket::shutdown_both, ec);
       mSocket.close( ec );
 
-      SessionIsOverNotify();
+      if( false == isWaitingForConnection ) SessionIsOverNotify();
    }
    catch( std::exception &e )
    {
@@ -62,6 +63,7 @@ local_str_proto::socket& Session::GetSocket()
  */
 void Session::Start()
 {
+   isWaitingForConnection = false;
    AddReceiveDataWork();
 }
 
