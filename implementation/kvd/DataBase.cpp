@@ -130,14 +130,7 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       break;
    case eQueryType::qtERASE:
    {
-      const bool status_ok = ProcessEraseQuery( query_info );
-      if( ! status_ok)
-      {
-         std::stringstream ss;
-         ss << "kvctl: no key ";
-         ss << "\"" << query_info.sKey +"\"";
-         s_ans = ss.str();
-      }
+      s_ans = ProcessEraseQuery( query_info );
       break;
    }
    default:
@@ -171,20 +164,32 @@ size_t DataBase::Hash( const std::string& s) const noexcept
    return hashFn( s );
 }
 
-bool DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
+std::string DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
 {
-/*
+   std::string s_ret( "Query OK" );
+
    if( query_info.sKey.empty() )
    {
-      // remove all
+      ProcessEraseAllKeysQuery();
    }
    else
    {
-      // remove
+      const bool status_ok = ProcessEraseKeyQuery( query_info.sKey );
+      if( false == status_ok )
+      {
+         std::stringstream ss;
+         ss << "kvctl: no key ";
+         ss << "\"" << query_info.sKey +"\"";
+         s_ret = ss.str();
+      }
    }
-*/
 
-   const size_t str_hash = Hash( query_info.sKey );
+   return s_ret;
+}
+
+bool DataBase::ProcessEraseKeyQuery( const std::string &s_key ) const
+{
+   const size_t str_hash = Hash( s_key );
    const std::string s_path_to_record = sPathToDb + "//" + std::to_string( str_hash );
 
    std::error_code ec;
@@ -208,11 +213,34 @@ bool DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
    return true;
 }
 
+void DataBase::ProcessEraseAllKeysQuery() const
+{
+   namespace fs = std::filesystem;
+
+   std::string s_result;
+
+   for( auto& p: fs::directory_iterator( sPathToDb ) )
+   {
+      std::string s_path_to_record = p.path();
+      std::fstream fs( s_path_to_record, std::ios::in | std::ios::out );
+
+      size_t key_len = 0;
+      fs >> key_len;
+      fs.ignore( 1 );   // ignore '\n'
+
+      fs.ignore( key_len );
+      fs.ignore( 1 );   // ignore '\n'
+
+      int is_valid = 0;
+      fs << is_valid ;
+   }
+}
+
 std::string DataBase::ProcessListQuery( const QueryInfo &query_info ) const
 {
    return ListKeys( query_info.sKey );
 }
-   
+
 std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ ) const
 {
    namespace fs = std::filesystem;

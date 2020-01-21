@@ -33,18 +33,18 @@ struct QueryInfo
 class DataBase
 {
 public:
-   DataBase();
-  ~DataBase() = default;
-   DataBase( const DataBase& ) = delete;
-   DataBase& operator=( const DataBase& ) = delete;
-
+                 DataBase();
+                ~DataBase() = default;
+                 DataBase( const DataBase& ) = delete;
+      DataBase&  operator=( const DataBase& ) = delete;
    std::string   ProcessQuery( const std::string &s_query ) const;
 
 private:
-public:
                     QueryInfo   ParseQueryString( const std::string &sw_query ) const;
                          bool   ProcessPutQuery( const QueryInfo &query_info ) const;
-                         bool   ProcessEraseQuery( const QueryInfo &query_info ) const;
+                  std::string   ProcessEraseQuery( const QueryInfo &query_info ) const;
+                         bool   ProcessEraseKeyQuery( const std::string &s_key ) const;
+                         void   ProcessEraseAllKeysQuery() const;
    std::optional<std::string>   ProcessGetQuery( const QueryInfo &query_info ) const;
                   std::string   ProcessListQuery( const QueryInfo &query_info ) const;
                          bool   CreateDbFolder() const noexcept;
