@@ -22,7 +22,7 @@ Session::Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db,
     nId( id ),
     isWaitingForConnection( true )
 {
-   std::cout << "session CTOR with id: " << GetId() << std::endl;
+
 }
 
 /**
@@ -32,8 +32,6 @@ Session::~Session()
 {
    try
    {
-      std::cout << "session DTOR with id: " << GetId() << std::endl;
-
       asio::error_code ec;
       mSocket.shutdown( asio::local::stream_protocol::socket::shutdown_both, ec);
       mSocket.close( ec );
@@ -86,7 +84,6 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
 {
    if( !error )
    {
-      std::cout << "Recv: " << bytes_transferred << std::endl;
       vFullMsg.insert( vFullMsg.end(), mData.begin(), mData.begin() + bytes_transferred );
 
       bool status_ok = false;
@@ -114,7 +111,7 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
    }
    else
    {
-      std::cout << "handle_read error: " << error << std::endl;
+      std::cout << "HandleRead() error: " << error << std::endl;
    }
 }
 
@@ -126,8 +123,6 @@ void Session::SendMsg( const std::string &s_msg )
    // we can send up to 64 kB per one async_write(): https://sourceforge.net/p/asio/mailman/message/23580095/
    vFullMsg = appProtocol.encodeMsg( s_msg );
 
-   std::cout << "Bytes to send: " << vFullMsg.size() << std::endl;
-   // std::cout << "Before: " << mSocket.get_io_service().stopped() << std::endl;
    asio::async_write(
       mSocket,
       asio::buffer( vFullMsg ),
@@ -149,8 +144,6 @@ void Session::HandleWrite( const asio::error_code& error, std::size_t bytes_tran
    {
       std::cout << "HandleWrite() error: " << error << std::endl;
    }
-
-   std::cout << "HandleWrite end: " << bytes_transferred << "ec: " << error << std::endl;
 }
 
 /**

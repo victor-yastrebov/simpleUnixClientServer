@@ -47,35 +47,30 @@ QueryInfo DataBase::ParseQueryString( const std::string& s_query ) const
 
    std::string_view s_type = s_query.substr( 0, type_end_pos );
 
-   // std::cout << "s_type is: " << s_type << std::endl;
-
    bool b_unknown_type = false;
    // fill in type
-   if(s_type == "list") query_info.eType = eQueryType::qtLIST;
-   else if(s_type == "put") query_info.eType  =  eQueryType::qtPUT;
-   else if(s_type == "get") query_info.eType = eQueryType::qtGET;
-   else if(s_type == "erase") query_info.eType = eQueryType::qtERASE;
+   if( s_type == "list" ) query_info.eType = eQueryType::qtLIST;
+   else if( s_type == "put" ) query_info.eType  =  eQueryType::qtPUT;
+   else if( s_type == "get" ) query_info.eType = eQueryType::qtGET;
+   else if( s_type == "erase" ) query_info.eType = eQueryType::qtERASE;
    else b_unknown_type = true;
-   
+
    if( b_no_params || b_unknown_type )
    {
       return query_info;
    }
 
    // fill in key
-// std::cout << "tep: " << type_end_pos << std::endl;
    const std::string::size_type key_end_pos =
       s_query.find_first_of( ' ', type_end_pos + 1 );
    if( std::string::npos != key_end_pos ) 
    {
-// std::cout << "1 " << key_end_pos << std::endl;
       query_info.sKey.assign(
          s_query.begin() + type_end_pos + 1,
          s_query.begin() + key_end_pos );
    }
    else
    {
-// std::cout << "2" << std::endl;
       query_info.sKey.assign(
          s_query.begin() + type_end_pos + 1, s_query.end() );
       return query_info;
@@ -134,12 +129,9 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
       break;
    }
    default:
-      s_ans = "UNKNOWN_CMD";
+      s_ans = "UNKNOWN COMMAND";
       break;
    }
-
-   // std::cout << "Key: " << query_info.sKey.size()  << std::endl;
-   // std::cout << "Value: " << query_info.sValue.size() << std::endl;
 
    return s_ans.value();
 }
@@ -250,26 +242,22 @@ std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ 
    for( auto& p: fs::directory_iterator( sPathToDb ) )
    {
       std::string s_path_to_record = p.path();
-      // std::cout << p.path() << '\n';
 
       std::ifstream fs( s_path_to_record );  
 
       size_t key_len = 0;
       fs >> key_len;
       fs.ignore( 1 );   // ignore '\n'
-      // std::cout << "Key len is: " << key_len << std::endl;
 
       std::string s_key;
       s_key.resize( key_len );
       fs.read( s_key.data(), key_len );
       fs.ignore( 1 );   // ignore '\n'
-      // std::cout << "Key is: " << s_key << std::endl;
 
       int is_valid = 0;
       fs >> is_valid ;
       fs.ignore( 1 );   // ignore '\n'
-      // std::cout << "Is valid: " << is_valid << std::endl;
-    
+
       if( 0 == is_valid )
       {
          continue;
@@ -287,7 +275,6 @@ std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ 
       s_result.pop_back();
    }
 
-  // std::cout << "s_result is: " << s_result << std::endl;
   return s_result;
 }
 
@@ -316,19 +303,16 @@ std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_inf
    size_t key_len = 0;
    fs >> key_len;
    fs.ignore( 1 );   // ignore '\n'
-   // std::cout << "Key len is: " << key_len << std::endl;
 
    std::string s_key;
    s_key.resize( key_len );
    fs.read( s_key.data(), key_len );
    fs.ignore( 1 );   // ignore '\n'
-   // std::cout << "Key is: " << s_key << std::endl;
 
    int is_valid = 0;
    fs >> is_valid ;
    fs.ignore( 1 );   // ignore '\n'
-   // std::cout << "Is valid: " << is_valid << std::endl;
-    
+
    if( 0 == is_valid )
    {
       return std::nullopt;
@@ -337,13 +321,10 @@ std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_inf
    size_t value_len = 0;
    fs >> value_len;
    fs.ignore( 1 );
-   // std::cout << "Value len is: " << value_len << std::endl;
 
    std::string s_value;
    s_value.resize( value_len );
    fs.read( s_value.data(), value_len);
-
-   // std::cout << "Value is: " << s_value << std::endl;
 
    return s_value;
 }
@@ -351,7 +332,6 @@ std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_inf
 bool DataBase::ProcessPutQuery( const QueryInfo &query_info ) const
 {
    const size_t str_hash = Hash( query_info.sKey );
-   // std::cout << "Hash is: " << str_hash << std::endl;
    const int b_row_is_not_deleted = 1;
 
    std::ofstream of( sPathToDb + "//" + std::to_string( str_hash ) );  

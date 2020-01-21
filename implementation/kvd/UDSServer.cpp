@@ -37,33 +37,30 @@ UDSServer::~UDSServer()
    // terminate all sessions
    {
       std::scoped_lock lock( mutSessions );
+
       // stop all active connections
       for( auto &p : umSessions )
       {
-         std::cout << "Inside cycle" << std::endl;
          std::shared_ptr<Session> p_sp = p.second.lock();
          if( p_sp )
          {
-            std::cout << "Reset" << std::endl;
             p_sp.reset();
          }
       }
    }
-
-   std::cout << "UDSServer DTOR end" << std::endl;
 }
 
+/**
+ * Run server for processing client queries
+ */
 void UDSServer::Run()
 {
    while( false == bServerIsStopped )
    {
-      std::cout << "Is stopped: " << asioService.stopped() << std::endl;
-      // asioService.reset();
-
-      // std::cout << "use_count()" << pCurSession.use_count() << std::endl;
-
+      // we have high load server, so there is a little chance that
+      // server will run out of work. So, however we check it
       asioService.run();
-      std::this_thread::sleep_for( std::chrono::seconds( 3 ) );
+      std::this_thread::sleep_for( std::chrono::seconds( 1 ) );
    }
 }
 
@@ -75,8 +72,7 @@ void UDSServer::StartToListenForNewSession()
 {
    pCurSession = std::make_shared<Session>(
       asioService, pDataBase, curSessionId );
-   // std::cout << "StartToListenForNewSession() start: use_count() - " << pCurSession.use_count() << std::endl;
-    
+
    ++curSessionId;
 
    SubscribeToEvents( pCurSession );
@@ -87,7 +83,6 @@ void UDSServer::StartToListenForNewSession()
          &UDSServer::HandleAccept, this, std::placeholders::_1
       )
    );
-   // std::cout << "StartToListenForNewSession() after async_accept: use_count() - " << pCurSession.use_count() << std::endl;
 }
 
 /**
@@ -109,12 +104,9 @@ void UDSServer::SubscribeToEvents( std::shared_ptr<Session> &s )
  */
 void UDSServer::HandleAccept( const asio::error_code& error )
 {
-   // std::cout << "HandleAccept() start: use_count() - " << pCurSession.use_count() << std::endl;
-   // std::cout << "HandleAccept() fired" << std::endl; 
    if( error )
    {
-      std::cout << "HandleAccept() error occured: " 
-         << error << std::endl;
+      std::cout << "HandleAccept() error occured: " << error << std::endl;
    }
    else
    {
@@ -127,18 +119,14 @@ void UDSServer::HandleAccept( const asio::error_code& error )
    }
 
 
-   std::cout << "numOnlineUsers: " << numOnlineUsers.load() << std::endl;
    if( numOnlineUsers.load() < nMaxOnlineUsers )
    {
-      // std::cout << "Start new session" << std::endl;
       StartToListenForNewSession();
    }
    else
    {
       pCurSession.reset();
    }
-
-   // std::cout << "HandleAccept() end: use_count() - " << pCurSession.use_count() << std::endl;
 }
 
 /**
@@ -146,11 +134,7 @@ void UDSServer::HandleAccept( const asio::error_code& error )
  */
 void UDSServer::OnSessionIsOver( const size_t n_sess_id )
 {
-   std::cout << "OnSessionIsOver() start for: " << n_sess_id << std::endl;
-
    numOnlineUsers.fetch_sub( 1 );
-   std::cout << "Num online users: " <<
-      numOnlineUsers.load() << std::endl;
 
    {
       // this session is not longer valid
@@ -161,14 +145,8 @@ void UDSServer::OnSessionIsOver( const size_t n_sess_id )
    if( ! bServerIsStopped.load() &&
        numOnlineUsers.load() + 1 == nMaxOnlineUsers )
    {
-      // if( asioService.stopped() )
-      // {
-      //    std::cout << "Is stopped" << std::endl;
-      //    asioService.reset();
-      // }
       StartToListenForNewSession();
    }
-   std::cout << "OnSessionIsOver() end for " << n_sess_id << std::endl;
 }
 
 /**
