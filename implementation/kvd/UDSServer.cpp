@@ -14,7 +14,7 @@
 /**
  * CTOR
  */
-UDSServer::UDSServer( const std::string& s_sock_fname , std::shared_ptr<SysLogger> &p_logger ) :
+UDSServer::UDSServer( const std::string& s_sock_fname, std::shared_ptr<SysLogger> &p_logger ) :
    pLogger( p_logger ),
    asioAcceptor( asioService, local_str_proto::endpoint( s_sock_fname ) ),
    nMaxOnlineUsers( 4096 ),

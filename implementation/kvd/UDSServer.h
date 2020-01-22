@@ -31,21 +31,21 @@ public:
    void   Run();
 
 private:
-                        void   HandleAccept( const asio::error_code& error );
-                        void   StartToListenForNewSession();
-                        void   SubscribeToEvents( std::shared_ptr<Session> &s );
-                        void   OnSessionIsOver( const size_t n_sess_id );
-                        void   OnStopServer();
+   void   HandleAccept( const asio::error_code& error );
+   void   StartToListenForNewSession();
+   void   SubscribeToEvents( std::shared_ptr<Session> &s );
+   void   OnSessionIsOver( const size_t n_sess_id );
+   void   OnStopServer();
 
-  std::shared_ptr<SysLogger>   pLogger;
-            asio::io_service   asioService;
-   local_str_proto::acceptor   asioAcceptor;
-   std::shared_ptr<DataBase>   pDataBase;
-                const size_t   nMaxOnlineUsers;
-    std::atomic<std::size_t>   numOnlineUsers;
-                      size_t   curSessionId;
-                  std::mutex   mutSessions;
-                wptr_sess_um   umSessions;
-    std::shared_ptr<Session>   pCurSession;
-           std::atomic<bool>   bServerIsStopped;
+   std::shared_ptr<SysLogger>   pLogger;
+             asio::io_service   asioService;
+    local_str_proto::acceptor   asioAcceptor;
+    std::shared_ptr<DataBase>   pDataBase;
+                 const size_t   nMaxOnlineUsers;
+     std::atomic<std::size_t>   numOnlineUsers;
+                       size_t   curSessionId;
+                   std::mutex   mutSessions;
+                 wptr_sess_um   umSessions;
+     std::shared_ptr<Session>   pCurSession;
+            std::atomic<bool>   bServerIsStopped;
 };

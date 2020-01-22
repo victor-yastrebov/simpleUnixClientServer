@@ -19,6 +19,9 @@
 
 #include "DataBase.h"
 
+/**
+ * CTOR
+ */
 DataBase::DataBase( std::shared_ptr<SysLogger> &p_logger ) :
    pLogger( p_logger ),
    sPathToDb( "/tmp/kvd/db" )
@@ -26,6 +29,9 @@ DataBase::DataBase( std::shared_ptr<SysLogger> &p_logger ) :
    CreateDbFolder();
 }
 
+/**
+ * Parse client query string
+ */
 QueryInfo DataBase::ParseQueryString( const std::string& s_query ) const
 {
    QueryInfo query_info;
@@ -84,6 +90,9 @@ QueryInfo DataBase::ParseQueryString( const std::string& s_query ) const
    return query_info;
 }
 
+/**
+ * Process client query
+ */
 std::string DataBase::ProcessQuery( const std::string &s_query ) const
 {
    const QueryInfo query_info = ParseQueryString( s_query ); 
@@ -137,6 +146,9 @@ std::string DataBase::ProcessQuery( const std::string &s_query ) const
    return s_ans.value();
 }
 
+/**
+ * Create folder that will store entire DB
+ */
 bool DataBase::CreateDbFolder() const noexcept
 {
    bool status_ok = true;
@@ -152,6 +164,9 @@ bool DataBase::CreateDbFolder() const noexcept
    return status_ok;
 }
 
+/**
+ * Calculate hash value
+ */
 size_t DataBase::Hash( const std::string& s) const noexcept
 {
    return hashFn( s );
@@ -180,6 +195,9 @@ std::string DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
    return s_ret;
 }
 
+/**
+ * Process erase query for particular key
+ */
 bool DataBase::ProcessEraseKeyQuery( const std::string &s_key ) const
 {
    const size_t str_hash = Hash( s_key );
@@ -206,6 +224,9 @@ bool DataBase::ProcessEraseKeyQuery( const std::string &s_key ) const
    return true;
 }
 
+/**
+ * Process erase query for all keys
+ */
 void DataBase::ProcessEraseAllKeysQuery() const
 {
    namespace fs = std::filesystem;
@@ -229,11 +250,18 @@ void DataBase::ProcessEraseAllKeysQuery() const
    }
 }
 
+/**
+ * Process list query
+ */
 std::string DataBase::ProcessListQuery( const QueryInfo &query_info ) const
 {
    return ListKeys( query_info.sKey );
 }
 
+/**
+ * Find all keys in database. If prefix is set only keys that starts with this
+ * prefix is returned
+ */
 std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ ) const
 {
    namespace fs = std::filesystem;
@@ -279,6 +307,9 @@ std::string DataBase::ListKeys( const std::string& s_prefix /*= std::string()*/ 
   return s_result;
 }
 
+/**
+ * Analyze wheter current key should be returned in list query or not
+ */
 bool DataBase::MatchListQuery( const std::string &s_prefix,
    const std::string &s_key ) const noexcept
 {
@@ -287,6 +318,9 @@ bool DataBase::MatchListQuery( const std::string &s_prefix,
    return ( 0 == s_key.compare( 0, s_prefix.size(), s_prefix ) );
 }
 
+/**
+ * Process get value for particular key from DB query
+ */
 std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_info ) const
 {
    const size_t str_hash = Hash( query_info.sKey );
@@ -330,6 +364,9 @@ std::optional<std::string> DataBase::ProcessGetQuery( const QueryInfo &query_inf
    return s_value;
 }
 
+/**
+ * Process insert key/value query into DB
+ */
 bool DataBase::ProcessPutQuery( const QueryInfo &query_info ) const
 {
    const size_t str_hash = Hash( query_info.sKey );

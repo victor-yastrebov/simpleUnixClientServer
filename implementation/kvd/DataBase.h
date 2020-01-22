@@ -28,9 +28,9 @@ enum class eQueryType
 
 struct QueryInfo 
 {
-   std::string sKey;
-   std::string sValue;
-   eQueryType  eType;
+   std::string   sKey;
+   std::string   sValue;
+    eQueryType   eType;
 };
 
 class DataBase

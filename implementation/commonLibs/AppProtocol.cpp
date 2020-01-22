@@ -26,7 +26,7 @@ AppProtocol::AppProtocol() :
 /**
  * Encode query into bytestream for furher transmitting
  */
-std::vector<BYTE> AppProtocol::encodeMsg( const std::string &s_msg ) const
+std::vector<BYTE> AppProtocol::EncodeMsg( const std::string &s_msg ) const
 {
    std::vector<BYTE> v_msg( s_msg.cbegin(), s_msg.cend() );
 
@@ -36,7 +36,7 @@ std::vector<BYTE> AppProtocol::encodeMsg( const std::string &s_msg ) const
    std::vector<BYTE> v_packet;
    v_packet.reserve( n_full_packet_len );
 
-   std::vector<BYTE> v_len = genLenField( n_full_packet_len );
+   std::vector<BYTE> v_len = GenLenField( n_full_packet_len );
 
    // put full packet length
    v_packet.insert( v_packet.end(),
@@ -56,7 +56,7 @@ std::vector<BYTE> AppProtocol::encodeMsg( const std::string &s_msg ) const
 /**
  * Decode result of query from bytestream
  */
-std::string AppProtocol::decodeMsg(
+std::string AppProtocol::DecodeMsg(
    const std::vector<BYTE> &v_packet, bool &status_ok ) const
 {
    status_ok = false;
@@ -69,7 +69,7 @@ std::string AppProtocol::decodeMsg(
 
    itData = v_packet.begin();
 
-   const int n_packet_size = getFieldValueOfFourBytesLen();
+   const int n_packet_size = GetFieldValueOfFourBytesLen();
    if( v_packet.size() < n_packet_size )
    {
       // full packet is not received
@@ -94,13 +94,13 @@ std::string AppProtocol::decodeMsg(
 /**
  * Generate length field
  */
-std::vector<BYTE> AppProtocol::genLenField( const int n_msg_len ) const
+std::vector<BYTE> AppProtocol::GenLenField( const int n_msg_len ) const
 {
    std::vector<BYTE> v_len;
-   v_len.push_back( getByteInPosition( n_msg_len, 3) );
-   v_len.push_back( getByteInPosition( n_msg_len, 2) );
-   v_len.push_back( getByteInPosition( n_msg_len, 1) );
-   v_len.push_back( getByteInPosition( n_msg_len, 0) );
+   v_len.push_back( GetByteInPosition( n_msg_len, 3) );
+   v_len.push_back( GetByteInPosition( n_msg_len, 2) );
+   v_len.push_back( GetByteInPosition( n_msg_len, 1) );
+   v_len.push_back( GetByteInPosition( n_msg_len, 0) );
 
    return v_len;
 }
@@ -109,7 +109,7 @@ std::vector<BYTE> AppProtocol::genLenField( const int n_msg_len ) const
  * Get value of the byte on the given position
  * The least significant byte is on the position 0 (the most right).
  */
-BYTE AppProtocol::getByteInPosition( const int val, const int pos ) const
+BYTE AppProtocol::GetByteInPosition( const int val, const int pos ) const
 {
    return ( val >> ( pos * 8 ) ) & 0xFF;
 }
@@ -117,7 +117,7 @@ BYTE AppProtocol::getByteInPosition( const int val, const int pos ) const
 /**
  * Get value of four bytes as int
  */
-int AppProtocol::getFieldValueOfFourBytesLen() const
+int AppProtocol::GetFieldValueOfFourBytesLen() const
 {
    int field_val = 0;
 
@@ -133,4 +133,3 @@ int AppProtocol::getFieldValueOfFourBytesLen() const
 
    return field_val;
 }
-

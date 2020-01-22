@@ -13,7 +13,6 @@
 #include<string>
 #include<vector>
 
-// C++17 has built-in type "byte"
 using BYTE = unsigned char;
 using DataConstIterator = std::vector<BYTE>::const_iterator;
 
@@ -24,13 +23,13 @@ public:
                       ~AppProtocol() = default;
                        AppProtocol( const AppProtocol& ) = delete;
                        AppProtocol& operator=( const AppProtocol& ) = delete;
-   std::vector<BYTE>   encodeMsg( const std::string &s_msg ) const;
-         std::string   decodeMsg( const std::vector<BYTE> &v_packet, bool &status_ok ) const;
+   std::vector<BYTE>   EncodeMsg( const std::string &s_msg ) const;
+         std::string   DecodeMsg( const std::vector<BYTE> &v_packet, bool &status_ok ) const;
 
 private:
-                        BYTE   getByteInPosition( const int val, const int pos ) const;
-                         int   getFieldValueOfFourBytesLen() const;
-           std::vector<BYTE>   genLenField( const int len ) const;
+                        BYTE   GetByteInPosition( const int val, const int pos ) const;
+                         int   GetFieldValueOfFourBytesLen() const;
+           std::vector<BYTE>   GenLenField( const int len ) const;
 
    mutable DataConstIterator   itData;
                    const int   nHeaderSize;

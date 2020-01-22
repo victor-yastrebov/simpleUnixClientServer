@@ -3,8 +3,8 @@
  * @author <va.yastrebov>
  * @description
  * <pre>
- *    Class contains file adressed for Client-Server
- *    Unix Domain Socket communications
+ *    Class contains file adresses for client-server
+ *    communications using unix domain sockets
  * </pre>
  *
  * @class UDS
@@ -16,6 +16,6 @@
 
 struct UDS
 {
-   inline const static std::string sClientSockFile = "/tmp/client.sock";
+   inline const static std::string sClientSockFile = "/tmp/client3.sock";
    inline const static std::string sServerSockFile = "/tmp/server.sock";
 };

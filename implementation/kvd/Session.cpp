@@ -10,6 +10,7 @@
  */
 
 #include"Session.h"
+#include"DataBase.h"
 
 /**
  * CTOR
@@ -38,7 +39,7 @@ Session::~Session()
    try
    {
       asio::error_code ec;
-      mSocket.shutdown( asio::local::stream_protocol::socket::shutdown_both, ec);
+      mSocket.shutdown( local_str_proto::socket::shutdown_both, ec);
       mSocket.close( ec );
 
       if( false == isWaitingForConnection ) SessionIsOverNotify();
@@ -92,7 +93,7 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
       vFullMsg.insert( vFullMsg.end(), mData.begin(), mData.begin() + bytes_transferred );
 
       bool status_ok = false;
-      const std::string s_query = appProtocol.decodeMsg(
+      const std::string s_query = appProtocol.DecodeMsg(
          vFullMsg, status_ok );
 
       if( ! status_ok )
@@ -126,7 +127,7 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
 void Session::SendMsg( const std::string &s_msg )
 {
    // we can send up to 64 kB per one async_write(): https://sourceforge.net/p/asio/mailman/message/23580095/
-   vFullMsg = appProtocol.encodeMsg( s_msg );
+   vFullMsg = appProtocol.EncodeMsg( s_msg );
 
    asio::async_write(
       mSocket,

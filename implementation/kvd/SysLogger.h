@@ -20,13 +20,13 @@ class SysLogger
 public:
    SysLogger()
    {
-      /* Open the log file */
+      // Open the log file
       openlog( "kvdservice", LOG_PID, LOG_DAEMON );
    }
 
-  ~SysLogger()
+   ~SysLogger()
    {
-     closelog();
+      closelog();
    }
 
    template<typename...Ts>
@@ -48,12 +48,10 @@ private:
       ss << t;
    }
 
-   // void LogToSyslog() {}
-
    template <typename T, typename...Ts>
    void LogImpl( T &&first, Ts&&... rest )
    {
-       ss << first << " ";
-       LogImpl( std::forward<Ts>( rest )... );
+      ss << first << " ";
+      LogImpl( std::forward<Ts>( rest )... );
    }
 };
