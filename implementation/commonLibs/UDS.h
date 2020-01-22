@@ -16,6 +16,6 @@
 
 struct UDS
 {
-   inline const static std::string sClientSockFile = "/tmp/client2.sock";
+   inline const static std::string sClientSockFile = "/tmp/client.sock";
    inline const static std::string sServerSockFile = "/tmp/server.sock";
 };

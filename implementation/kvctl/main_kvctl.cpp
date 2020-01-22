@@ -1,20 +1,14 @@
-#include<cstdlib>
-#include<cstring>
 #include<iostream>
-#include<vector>
 
-#include"asio.hpp"
-#include"AppProtocol.h"
 #include"UDS.h"
+#include"UDSClient.h"
 
 #if defined(ASIO_HAS_LOCAL_SOCKETS)
-
-using asio::local::stream_protocol;
 
 /**
  * Print application usage
  */
-void printHelp()
+void PrintHelp()
 {
    std::cout << "Client for database by va.yastrebov." << std::endl;
    std::cout << "Usage examples: " << std::endl;
@@ -27,7 +21,7 @@ void printHelp()
 /**
  * Create query string from input CLI args
  */
-std::string getQuery( const int argc, const char *const argv[] )
+std::string GetQuery( const int argc, const char *const argv[] )
 {
    std::stringstream ss;
    for( int i = 1; i < argc; ++i)
@@ -50,72 +44,23 @@ int main( int argc, char* argv[] )
 
   try
   {
-    const std::string s_query = getQuery( argc, argv );
+    const std::string s_query = GetQuery( argc, argv );
 
     if( s_query.empty() )
     {
-       printHelp();
+       PrintHelp();
        return 1;
     }
 
-    const std::string s_server_sock_file( UDS::sServerSockFile );
-    const std::string s_client_sock_file( UDS::sClientSockFile );
-    std::remove( s_client_sock_file.c_str() );
+    UDSClient client( UDS::sClientSockFile );
 
-    asio::io_service io_service;
-    stream_protocol::socket s( io_service,
-      stream_protocol::endpoint( s_client_sock_file ) );
-
-    asio::error_code ec;
-    s.connect( stream_protocol::endpoint( s_server_sock_file.c_str() ), ec );
-    if( ec )
+    if( ! client.Connect( UDS::sServerSockFile ) )
     {
-       std::cout << "Connection to server failed: " << ec << std::endl;
+       std::cout << "Connection to server failed" << std::endl;
        return 1;
     }
 
-    AppProtocol app_protocol;
-    std::vector<BYTE> v_query =
-       app_protocol.encodeMsg( s_query );
-
-    asio::write( s, asio::buffer( v_query, v_query.size() ) );
-
-    const size_t buf_size = 4;
-    std::vector<BYTE> v_buf;
-    v_buf.resize( buf_size );
-
-    size_t bytes_read = 0;
-
-    std::vector<BYTE> v_full_msg;
-
-    while( !ec )
-    {
-       bytes_read = asio::read( s, asio::buffer( v_buf ), ec );
-       v_full_msg.insert( v_full_msg.end(),
-          v_buf.begin(), v_buf.begin() + bytes_read );
-    }
-
-    bool status_ok = false;
-    const std::string s_ans = app_protocol.decodeMsg(
-       v_full_msg, status_ok );
-
-    if( status_ok )
-    {
-       // it will be more accurate to pass query status in AppProtocol msg
-       const std::string s_dummy_ok_pattern = "Query OK";
-       if( s_ans != s_dummy_ok_pattern ) std::cout << s_ans << std::endl;
-
-       const std::string s_failure_pattern = "kvctl:";
-       const bool has_failure_pattern =
-          ( 0 == s_ans.compare( 0, s_failure_pattern.size(), s_failure_pattern ) );
-
-       ret_code = has_failure_pattern;
-    }
-    else
-    {
-       std::cout << "Recv wrong message" << std::endl;
-       ret_code = 1;
-    }
+    ret_code = client.ProcSession( s_query );
 
   }
   catch( std::exception& e )
@@ -133,5 +78,5 @@ int main( int argc, char* argv[] )
 }
 
 #else // defined(ASIO_HAS_LOCAL_SOCKETS)
-# error Local sockets not available on this platform.
+# error Local sockets not available on this platform
 #endif // defined(ASIO_HAS_LOCAL_SOCKETS)

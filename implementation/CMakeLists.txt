@@ -53,14 +53,14 @@ set(kvd_sources ${kvd_sources}
 )
 
 set(kvctl_headers ${kvctl_headers}
-#   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.h"
    "${CMAKE_CURRENT_LIST_DIR}/commonLibs/UDS.h"
    "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.h"
 )
 
 set(kvctl_sources ${kvctl_sources}
     "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.cpp"
 )
 
