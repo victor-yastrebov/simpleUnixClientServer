@@ -19,7 +19,8 @@
 
 #include "DataBase.h"
 
-DataBase::DataBase() :
+DataBase::DataBase( std::shared_ptr<SysLogger> &p_logger ) :
+   pLogger( p_logger ),
    sPathToDb( "/tmp/kvd/db" )
 {
    CreateDbFolder();
@@ -144,7 +145,7 @@ bool DataBase::CreateDbFolder() const noexcept
    std::filesystem::create_directories( sPathToDb, ec );
    if( ec )
    {
-      std::cout << "ERROR: failed to create directory " << ec << std::endl;
+      pLogger->Log( "ERROR: failed to create directory ", ec );
       status_ok = false;
    }
 

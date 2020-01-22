@@ -17,13 +17,14 @@
 #include"DataBase.h"
 #include"Session.h"
 #include"asio.hpp"
+#include"SysLogger.h"
 
 using wptr_sess_um = std::unordered_map<size_t, std::weak_ptr<Session>>;
 
 class UDSServer
 {
 public:
-          UDSServer( const std::string& s_sock_fname );
+          UDSServer( const std::string& s_sock_fname, std::shared_ptr<SysLogger> &p_logger );
          ~UDSServer();
           UDSServer( const UDSServer& ) = delete;
           UDSServer& operator=( const UDSServer& ) = delete;
@@ -36,6 +37,7 @@ private:
                         void   OnSessionIsOver( const size_t n_sess_id );
                         void   OnStopServer();
 
+  std::shared_ptr<SysLogger>   pLogger;
             asio::io_service   asioService;
    local_str_proto::acceptor   asioAcceptor;
    std::shared_ptr<DataBase>   pDataBase;

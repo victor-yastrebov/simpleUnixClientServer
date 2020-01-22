@@ -14,6 +14,7 @@
 
 #include"DataBase.h"
 #include"AppProtocol.h"
+#include"SysLogger.h"
 #include"asio.hpp"
 
 using local_str_proto = asio::local::stream_protocol;
@@ -24,6 +25,7 @@ class Session
 public:
                               Session( asio::io_service& io_service,
                                        std::shared_ptr<DataBase> &p_db,
+                                       std::shared_ptr<SysLogger> &p_logger,
                                        const size_t id );
                              ~Session();
    local_str_proto::socket&  GetSocket();
@@ -41,6 +43,7 @@ private:
       void   HandleWrite( const asio::error_code& error, std::size_t bytes_transferred );
       void   AddReceiveDataWork();
 
+  std::shared_ptr<SysLogger>   pLogger;
      local_str_proto::socket   mSocket;
    std::shared_ptr<DataBase>   pDataBase;
       std::array<char, 1024>   mData;

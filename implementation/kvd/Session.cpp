@@ -14,7 +14,12 @@
 /**
  * CTOR
  */
-Session::Session( asio::io_service& io_service, std::shared_ptr<DataBase> &p_db, const size_t id ) :
+Session::Session( asio::io_service& io_service,
+                  std::shared_ptr<DataBase> &p_db,
+                  std::shared_ptr<SysLogger> &p_logger,
+                  const size_t id ) :
+
+    pLogger( p_logger ),
     mSocket( io_service ),
     pDataBase( p_db ),
     sessionIsOverEvent( nullptr ),
@@ -40,11 +45,11 @@ Session::~Session()
    }
    catch( std::exception &e )
    {
-      std::cout << "session DTOR exception caught: " << e.what() << std::endl;
+      pLogger->Log( "Session DTOR exception caught: ", e.what() );
    }
    catch( ... )
    {
-      std::cout << "session DTOR unknown exception caught" << std::endl;
+      pLogger->Log( "Session DTOR unknown exception caught" );
    }
 }
 
@@ -92,12 +97,12 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
 
       if( ! status_ok )
       {
-         std::cout << "Received msg is not full" << std::endl;
          AddReceiveDataWork();
          return;
       }
 
-      std::cout << "Recv query: " << s_query << std::endl;
+      pLogger->Log( "Recv query: ", s_query );
+
       // Command for stopping server
       if( s_query == "exit")
       {
@@ -111,7 +116,7 @@ void Session::HandleRead( const asio::error_code& error, size_t bytes_transferre
    }
    else
    {
-      std::cout << "HandleRead() error: " << error << std::endl;
+      pLogger->Log( "HandleRead() error: ", error );
    }
 }
 
@@ -142,7 +147,7 @@ void Session::HandleWrite( const asio::error_code& error, std::size_t bytes_tran
 {
    if( error )
    {
-      std::cout << "HandleWrite() error: " << error << std::endl;
+      pLogger->Log( "HandleWrite() error: ", error );
    }
 }
 

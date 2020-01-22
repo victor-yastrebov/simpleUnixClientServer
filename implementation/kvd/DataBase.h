@@ -4,15 +4,18 @@
  * @description
  * <pre>
  *    Class is responsible for store/load data from database
-  * </pre>
+ * </pre>
  *
  * @class DataBase
  */
 
 #pragma once
 
+#include<memory>
 #include<string>
 #include<optional>
+
+#include"SysLogger.h"
 
 enum class eQueryType
 {
@@ -33,7 +36,7 @@ struct QueryInfo
 class DataBase
 {
 public:
-                 DataBase();
+                 DataBase( std::shared_ptr<SysLogger> &p_logger );
                 ~DataBase() = default;
                  DataBase( const DataBase& ) = delete;
       DataBase&  operator=( const DataBase& ) = delete;
@@ -52,6 +55,7 @@ private:
                   std::string   ListKeys( const std::string& s_prefix = std::string() ) const;
                          bool   MatchListQuery( const std::string &s_prefix, const std::string &s_key ) const noexcept;
 
+   std::shared_ptr<SysLogger>   pLogger;
             const std::string   sPathToDb;
        std::hash<std::string>   hashFn;
 };

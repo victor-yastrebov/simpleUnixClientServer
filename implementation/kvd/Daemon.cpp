@@ -22,7 +22,8 @@
 /**
  * CTOR
  */
-Daemon::Daemon() :
+Daemon::Daemon( std::shared_ptr<SysLogger> &p_logger ) :
+   pLogger( p_logger ),
    isDaemon( false )
 {
 
@@ -53,7 +54,7 @@ bool Daemon::Daemonise()
    /* An error occurred */
    if( pid < 0 )
    {
-      std::cout << "Error: failed to fork for the first time" << std::endl;
+      pLogger->Log( "Daemonise error: failed to fork for the first time" );
       return false;
    }
 
@@ -66,7 +67,7 @@ bool Daemon::Daemonise()
    /* On success: The child process becomes session leader */
    if( setsid() < 0 )
    {
-      std::cout << "Error: setsid failed" << std::endl;
+      pLogger->Log( "Daemonise error: setsid failed" );
       return false;
    }
 
@@ -81,7 +82,7 @@ bool Daemon::Daemonise()
    /* An error occurred */
    if( pid < 0 )
    {
-      std::cout << "Error: failed to fork for the second time" << std::endl;
+      pLogger->Log( "Daemonise error: failed to fork for the second time" );
       return false;
    }
 
@@ -106,7 +107,7 @@ bool Daemon::Daemonise()
    }
 
    /* Open the log file */
-   openlog( "kvdservice", LOG_PID, LOG_DAEMON );
+   // openlog( "kvdservice", LOG_PID, LOG_DAEMON );
 
    isDaemon = true;
    return true;

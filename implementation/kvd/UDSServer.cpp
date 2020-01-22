@@ -14,12 +14,13 @@
 /**
  * CTOR
  */
-UDSServer::UDSServer(  const std::string& s_sock_fname ) :
+UDSServer::UDSServer( const std::string& s_sock_fname , std::shared_ptr<SysLogger> &p_logger ) :
+   pLogger( p_logger ),
    asioAcceptor( asioService, local_str_proto::endpoint( s_sock_fname ) ),
    nMaxOnlineUsers( 4096 ),
    numOnlineUsers( 0 ),
    curSessionId( 0 ),
-   pDataBase( std::make_shared<DataBase>() ),
+   pDataBase( std::make_shared<DataBase>( p_logger ) ),
    pCurSession( nullptr ),
    bServerIsStopped( false )
 {
@@ -71,7 +72,7 @@ void UDSServer::Run()
 void UDSServer::StartToListenForNewSession()
 {
    pCurSession = std::make_shared<Session>(
-      asioService, pDataBase, curSessionId );
+      asioService, pDataBase, pLogger, curSessionId );
 
    ++curSessionId;
 
@@ -106,7 +107,7 @@ void UDSServer::HandleAccept( const asio::error_code& error )
 {
    if( error )
    {
-      std::cout << "HandleAccept() error occured: " << error << std::endl;
+      pLogger->Log( "HandleAccept() error occured: ", error );
    }
    else
    {
@@ -154,7 +155,7 @@ void UDSServer::OnSessionIsOver( const size_t n_sess_id )
  */
 void UDSServer::OnStopServer()
 {
-   std::cout << "UDSServer(): receive stop server command" << std::endl;
+   pLogger->Log( "Receive stop server command. Stopping server..." );
    bServerIsStopped.store( true );
    asioService.stop();
 }

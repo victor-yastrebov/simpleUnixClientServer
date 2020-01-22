@@ -28,11 +28,8 @@ add_definitions(
     -DASIO_HAS_STD_TYPE_TRAITS
     -DASIO_HAS_STD_ATOMIC
     -DASIO_HAS_LOCAL_SOCKETS
-#    -DRH_WINDOW_CLASS_NAME=L"RemoteHelperClient"  # имя класса окна главного окна приложения. Нужно для обнаружения ранее запущенных экземпляров приложения
-#    -DBOOST_NO_CXX11_SCOPED_ENUMS                 # for boost::copy_file for CentOS
 )
 
-#message(STATUS "sources: " ${sources})
 message(STATUS "directories: " ${directories})
 
 include_directories(
@@ -41,7 +38,8 @@ include_directories(
 
 set(kvd_headers ${kvd_headers}
 #   "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/SysLogger.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Session.h"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
@@ -49,12 +47,8 @@ set(kvd_headers ${kvd_headers}
 )
 
 set(kvd_sources ${kvd_sources}
-  #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd2.cpp"
-  #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd3.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
-  #"${CMAKE_CURRENT_LIST_DIR}/kvd/StreamServer.cpp"
-   #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
-   #"${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
+  "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/kvd/Session.cpp"
@@ -64,21 +58,15 @@ set(kvd_sources ${kvd_sources}
 set(kvctl_headers ${kvctl_headers}
 #   "${CMAKE_CURRENT_LIST_DIR}/UDS.h"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.h"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.h"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.h"
    "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.h"
 )
 
 set(kvctl_sources ${kvctl_sources}
-#   "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/kvctl/main_kvctl.cpp"
 #   "${CMAKE_CURRENT_LIST_DIR}/kvctl/UDSClient.cpp"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
-#   "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.cpp"
 )
 
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g -lpthread -static -static-libstdc++ -static-libgcc")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g -lpthread -static-libstdc++")
 
 add_executable(${KVD_PROJECT_NAME} ${kvd_headers} ${kvd_sources})
