@@ -1,11 +1,11 @@
-// #include<iostream>
 #include<algorithm>
 
 #include"asio.hpp"
-#include"UDSServer.h"
-#include"DataBase.h"
 #include"Daemon.h"
 #include"SysLogger.h"
+#include"UDS.h"
+#include"UDSServer.h"
+#include"DataBase.h"
 
 #if defined(ASIO_HAS_LOCAL_SOCKETS)
 
@@ -19,11 +19,12 @@ int main()
 
       Daemon daemon( p_logger );
       if( false == daemon.Daemonise() )
+      // if( false )
       {
          return 0;
       }
 
-      const std::string s_socket_file( "/tmp/server.sock" );
+      const std::string s_socket_file( UDS::sServerSockFile );
       std::remove( s_socket_file.c_str() );
 
       UDSServer s( s_socket_file, p_logger );

@@ -5,6 +5,7 @@
 
 #include"asio.hpp"
 #include"AppProtocol.h"
+#include"UDS.h"
 
 #if defined(ASIO_HAS_LOCAL_SOCKETS)
 
@@ -37,8 +38,7 @@ std::string getQuery( const int argc, const char *const argv[] )
    std::string s_query = ss.str();
    if( argc > 1 )
    {
-      // s_query.pop_back();
-      s_query.resize( s_query.size() - 1 );
+      s_query.pop_back();
    }
 
    return s_query;
@@ -58,12 +58,13 @@ int main( int argc, char* argv[] )
        return 1;
     }
 
-    asio::io_service io_service;
-    const std::string s_server_sock_file( "/tmp/server.sock" );
-    const std::string s_client_sock_file( "/tmp/client4.sock" );
-
+    const std::string s_server_sock_file( UDS::sServerSockFile );
+    const std::string s_client_sock_file( UDS::sClientSockFile );
     std::remove( s_client_sock_file.c_str() );
-    stream_protocol::socket s( io_service, stream_protocol::endpoint( s_client_sock_file ) );
+
+    asio::io_service io_service;
+    stream_protocol::socket s( io_service,
+      stream_protocol::endpoint( s_client_sock_file ) );
 
     asio::error_code ec;
     s.connect( stream_protocol::endpoint( s_server_sock_file.c_str() ), ec );
