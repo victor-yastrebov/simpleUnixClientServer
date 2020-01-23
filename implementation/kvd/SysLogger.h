@@ -3,7 +3,7 @@
  * @author <va.yastrebov>
  * @description
  * <pre>
- *    Class is responsible for logging to syslog
+ *    Class is responsible for logging to syslog and to cout
   * </pre>
  *
  * @class SysLogger
@@ -18,40 +18,37 @@
 class SysLogger
 {
 public:
+   /**
+    * CTOR
+    */
    SysLogger()
    {
-      // Open the log file
       openlog( "kvdservice", LOG_PID, LOG_DAEMON );
    }
 
+   /**
+    * DTOR
+    */
    ~SysLogger()
    {
       closelog();
    }
 
+   /**
+    * Do log both to std::cout and syslog
+    */
    template<typename...Ts>
-   void Log( Ts&&... rest )
+   void Log( Ts&&... params )
    {
-      LogImpl( "[ksvdservice db] ", std::forward<Ts>( rest )... );
-      std::string s_msg = ss.str();
+      ss.str( "" );
+
+      (( ss << params << " " ), ... );
+      const std::string s_msg = ss.str();
+
       std::cout << s_msg << std::endl;
       syslog( LOG_NOTICE, s_msg.c_str() );
-      ss.str( "" );
    }
 
 private:
    std::stringstream ss;
-
-   template <typename T>
-   void LogImpl( T t )
-   {
-      ss << t;
-   }
-
-   template <typename T, typename...Ts>
-   void LogImpl( T &&first, Ts&&... rest )
-   {
-      ss << first << " ";
-      LogImpl( std::forward<Ts>( rest )... );
-   }
 };
