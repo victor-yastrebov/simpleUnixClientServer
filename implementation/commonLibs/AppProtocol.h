@@ -34,4 +34,3 @@ private:
    mutable DataConstIterator   itData;
                    const int   nHeaderSize;
 };
-

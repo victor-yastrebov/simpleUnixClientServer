@@ -17,12 +17,11 @@ class Daemon
 {
 public:
           Daemon( std::shared_ptr<SysLogger> &p_logger );
-         ~Daemon();
+         ~Daemon() = default;
           Daemon( const Daemon& ) = delete;
           Daemon& operator=( const Daemon& ) = delete;
    bool   Daemonise();
 
 private:
    std::shared_ptr<SysLogger>   pLogger;
-                         bool   isDaemon;
 };

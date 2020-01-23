@@ -19,7 +19,7 @@
 #include"asio.hpp"
 #include"SysLogger.h"
 
-using wptr_sess_um = std::unordered_map<size_t, std::weak_ptr<Session>>;
+using um_wptr_sess = std::unordered_map<size_t, std::weak_ptr<Session>>;
 
 class UDSServer
 {
@@ -45,7 +45,7 @@ private:
      std::atomic<std::size_t>   numOnlineUsers;
                        size_t   curSessionId;
                    std::mutex   mutSessions;
-                 wptr_sess_um   umSessions;
+                 um_wptr_sess   umSessions;
      std::shared_ptr<Session>   pCurSession;
             std::atomic<bool>   bServerIsStopped;
 };

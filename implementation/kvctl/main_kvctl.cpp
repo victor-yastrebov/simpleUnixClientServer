@@ -1,3 +1,15 @@
+/**
+ *
+ * @author <va.yastrebov>
+ * @description
+ * <pre>
+ *    Entry point for the unix domain socket based client application.
+ *    This client can communicate with databse using predefined queries.
+ * </pre>
+ *
+ * @file main_kvctl.cpp
+ */
+
 #include<iostream>
 
 #include"UDS.h"
@@ -10,12 +22,13 @@
  */
 void PrintHelp()
 {
-   std::cout << "Client for database by va.yastrebov." << std::endl;
+   std::cout << "Unix domain socket based client for remote database ver. 1.0" << std::endl;
+   std::cout << std::endl;
    std::cout << "Usage examples: " << std::endl;
-   std::cout << " - PUT <key> <value>" << std::endl;
-   std::cout << " - GET <key>" << std::endl;
-   std::cout << " - ERASE [key]" << std::endl;
-   std::cout << " - LIST [prefix]" << std::endl;
+   std::cout << " - put <key> <value> : insert key/value pair into db" << std::endl;
+   std::cout << " - get <key>         : select value associated with key" << std::endl;
+   std::cout << " - erase [key]       : delete key/value pair" << std::endl;
+   std::cout << " - list [prefix]     : select all keys starting with prefix if defined" << std::endl;
 }
 
 /**

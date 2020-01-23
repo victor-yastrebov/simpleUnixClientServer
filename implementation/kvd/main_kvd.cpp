@@ -1,3 +1,15 @@
+/**
+ *
+ * @author <va.yastrebov>
+ * @description
+ * <pre>
+ *    Entry point for the unix domain socket based server application.
+ *    It can process client queries.
+ * </pre>
+ *
+ * @file main_kvd.cpp
+ */
+
 #include<algorithm>
 
 #include"Daemon.h"
@@ -17,7 +29,6 @@ int main()
 
       Daemon daemon( p_logger );
       if( false == daemon.Daemonise() )
-      // if( false )
       {
          return 0;
       }
