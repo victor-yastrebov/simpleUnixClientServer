@@ -172,6 +172,9 @@ size_t DataBase::Hash( const std::string& s) const noexcept
    return hashFn( s );
 }
 
+/**
+ * Process erase query
+ */
 std::string DataBase::ProcessEraseQuery( const QueryInfo &query_info ) const
 {
    std::string s_ret( "Query OK" );
