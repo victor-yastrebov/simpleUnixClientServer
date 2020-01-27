@@ -17,7 +17,7 @@ Compilaton is tested on CentOS 7.4 with `g++ 9.2.0` and `CMake 3.6.3`.
 Run `./buildGCC.sh` for compilation.
 
 ## Usage example:
-
+```
  $ #start of server
  $ ./kvd
  $ ./kvctl get foo
@@ -43,3 +43,4 @@ Run `./buildGCC.sh` for compilation.
  $ ./kvctl erase
  $ ./kvctl list | wc -l
  0
+```
