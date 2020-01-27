@@ -14,9 +14,9 @@ The following queries are supported:
 ## How to compile
 Need C++ compiler that supports C++11/14/17 standarts and `CMake` for generation `make` files.
 Compilaton is tested on CentOS 7.4 with `g++ 9.2.0` and `CMake 3.6.3`.
-Run `./buildGCC.sh` for compilation.
+Run `./compileGCC.sh` for project compilation. Result artifacts will in `build` folder.
 
-## Usage example:
+## Usage example
 ```
  $ #start of server
  $ ./kvd
