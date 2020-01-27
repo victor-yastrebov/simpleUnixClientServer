@@ -10,8 +10,6 @@
  */
 
 #include<iostream>
-#include<stdio.h>
-#include<stdlib.h>
 #include<unistd.h>
 #include<signal.h>
 #include<sys/stat.h>
@@ -22,22 +20,10 @@
 /**
  * CTOR
  */
-Daemon::Daemon() :
-   isDaemon( false )
+Daemon::Daemon( std::shared_ptr<SysLogger> &p_logger ) :
+   pLogger( p_logger )
 {
 
-}
-
-/**
- * DTOR
- */
-Daemon::~Daemon()
-{
-   if( isDaemon )
-   {
-      // syslog (LOG_NOTICE, "KVD service terminated");
-      // closelog();
-   }
 }
 
 /**
@@ -47,67 +33,57 @@ bool Daemon::Daemonise()
 {
    pid_t pid;
 
-   /* Fork off the parent process */
+   // Fork off the parent process
    pid = fork();
-
-   /* An error occurred */
    if( pid < 0 )
    {
-      std::cout << "Error: failed to fork for the first time" << std::endl;
+      pLogger->Log( "Daemonise error: failed to fork for the first time" );
       return false;
    }
 
-   /* Success: Let the parent terminate */
+   // Let the parent terminate
    if( pid > 0 )
    {
       return false;
    }
 
-   /* On success: The child process becomes session leader */
+   // The child process becomes session leader
    if( setsid() < 0 )
    {
-      std::cout << "Error: setsid failed" << std::endl;
+      pLogger->Log( "Daemonise error: setsid failed" );
       return false;
    }
 
-   /* Catch, ignore and handle signals */
-   //TODO: Implement a working signal handler */
+   // Catch, ignore and handle signals
    signal( SIGCHLD, SIG_IGN );
    signal( SIGHUP, SIG_IGN );
 
-   /* Fork off for the second time*/
+   // Fork off for the second time
    pid = fork();
-
-   /* An error occurred */
    if( pid < 0 )
    {
-      std::cout << "Error: failed to fork for the second time" << std::endl;
+      pLogger->Log( "Daemonise error: failed to fork for the second time" );
       return false;
    }
 
-   /* Success: Let the parent terminate */
+   // Let the parent terminate
    if( pid > 0 )
    {
       return false;
    }
 
-   /* Set new file permissions */
+   // Set new file permissions
    umask( 0 );
 
-   /* Change the working directory to the root directory */
-   /* or another appropriated directory */
+   // Change the working directory to the root directory
    chdir( "/" );
 
-   /* Close all open file descriptors */
+   // Close all open file descriptors
    int x;
    for( x = sysconf( _SC_OPEN_MAX ); x >= 0; x-- )
    {
       close( x );
    }
 
-   /* Open the log file */
-   openlog( "kvdservice", LOG_PID, LOG_DAEMON );
-
-   isDaemon = true;
    return true;
 }

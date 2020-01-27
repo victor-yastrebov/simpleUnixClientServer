@@ -9,20 +9,19 @@
  * @class Daemon
  */
 
-// daemon implementation via:
-// https://stackoverflow.com/questions/17954432/creating-a-daemon-in-linux/17955149#17955149
+#include<memory>
 
-// может в эту сторону посмотреть?: https://habr.com/en/post/129207/
+#include"SysLogger.h"
 
 class Daemon
 {
 public:
-          Daemon();
-         ~Daemon();
+          Daemon( std::shared_ptr<SysLogger> &p_logger );
+         ~Daemon() = default;
           Daemon( const Daemon& ) = delete;
           Daemon& operator=( const Daemon& ) = delete;
    bool   Daemonise();
 
 private:
-   bool   isDaemon;
+   std::shared_ptr<SysLogger>   pLogger;
 };
