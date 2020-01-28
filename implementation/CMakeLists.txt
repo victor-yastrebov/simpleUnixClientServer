@@ -14,6 +14,9 @@ set(kvctl_directories "")
 
 set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/commonLibs/")
 set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/commonLibs/3dparty/asio-1.12.2/include/")
+set(directories ${directories} "${CMAKE_CURRENT_LIST_DIR}/commonLibs/3dparty/libevent/libevent-2.1.11-src/include/")
+#set(directories ${directories} "/opt/libevent/include/")
+set(directories ${directories} "/opt/libevent/lib/")
 
 add_definitions(
    -DASIO_STANDALONE
@@ -43,7 +46,8 @@ set(kvd_headers ${kvd_headers}
 )
 
 set(kvd_sources ${kvd_sources}
-   "${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
+   #"${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd.cpp"
+   "${CMAKE_CURRENT_LIST_DIR}/kvd/main_kvd_libevent.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/Daemon.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/UDSServer.cpp"
    "${CMAKE_CURRENT_LIST_DIR}/kvd/DataBase.cpp"
@@ -63,7 +67,11 @@ set(kvctl_sources ${kvctl_sources}
    "${CMAKE_CURRENT_LIST_DIR}/commonLibs/AppProtocol.cpp"
 )
 
+link_directories("${CMAKE_CURRENT_LIST_DIR}/commonLibs/3dparty/libevent/libevent-2.1.11-lib/")
+
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -g -lpthread -static-libstdc++")
 
 add_executable(${KVD_PROJECT_NAME} ${kvd_headers} ${kvd_sources})
 add_executable(${KVCTL_PROJECT_NAME} ${kvctl_headers} ${kvctl_sources})
+
+target_link_libraries(${KVD_PROJECT_NAME} "libevent.a")

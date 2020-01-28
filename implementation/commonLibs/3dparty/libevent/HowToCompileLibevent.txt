@@ -1,0 +1,16 @@
+
+-----------------------------------------------
+How to install libevent (tested on CentOS 7.4):
+-----------------------------------------------
+
+1. Download libevent from https://libevent.org/
+2. Install
+
+$ cd libevent-2.1.11
+$ ./configure --prefix=/opt/libevent
+# hopefully, you haven't encountered any errors so far
+$ make
+$ sudo make install
+
+You will find all libs and include in /opt/libevent/ folder.
+Use "ls -la /opt/libevent" for details
