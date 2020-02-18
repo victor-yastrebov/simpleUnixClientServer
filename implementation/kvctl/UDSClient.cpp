@@ -67,7 +67,7 @@ int UDSClient::ProcSession( const std::string &s_query )
    asio::write( mSocket,
       asio::buffer( v_query, v_query.size() ) );
 
-   const size_t buf_size = 4;
+   const size_t buf_size = 100;
    std::vector<BYTE> v_buf;
    v_buf.resize( buf_size );
 
@@ -81,6 +81,8 @@ int UDSClient::ProcSession( const std::string &s_query )
       bytes_read = asio::read( mSocket, asio::buffer( v_buf ), ec );
       v_full_msg.insert( v_full_msg.end(),
          v_buf.begin(), v_buf.begin() + bytes_read );
+      std::cout << "Recv bytes: " << bytes_read << std::endl;
+      std::cout << "msg: " << std::string( v_buf.begin(), v_buf.begin() + bytes_read ) << std::endl;
    }
 
    bool status_ok = false;
